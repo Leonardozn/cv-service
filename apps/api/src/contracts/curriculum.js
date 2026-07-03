@@ -12,6 +12,7 @@ class CurriculumContract {
 
 	getContract() {
 		return {
+			id: true,
 			user: true,
 			fullName: true,
 			headline: true,

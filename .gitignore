@@ -29,6 +29,9 @@ tmp/
 temp/
 .cache/
 
+# File uploads (file-manager local storage strategy)
+*-uploads/
+
 # Dependency directories
 bower_components/
 jspm_packages/
