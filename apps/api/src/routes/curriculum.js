@@ -15,6 +15,11 @@ const CurriculumController = require('../controllers/curriculum')
  *   post:
  *     tags: [Curriculum]
  *     summary: Create a Curriculum
+ *     description: |
+ *       Accepts either a JSON body, or `multipart/form-data` when uploading the profile photo as
+ *       a file (field name `photo`) - the stored filename is what ends up in the `photo` response
+ *       field, never the file itself. `contactLinks`/`skills` are not uploadable as multipart
+ *       array fields in this API; send those via the JSON variant.
  *     requestBody:
  *       required: true
  *       content:
@@ -48,6 +53,17 @@ const CurriculumController = require('../controllers/curriculum')
  *             profileSummary: "5+ years building distributed systems."
  *             skills: ["Node.js", "MongoDB"]
  *             contactLinks: [{ label: "LinkedIn", url: "linkedin.com/in/janedoe" }]
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             required: [user, fullName, headline, city, profileSummary]
+ *             properties:
+ *               user: { type: string }
+ *               fullName: { type: string }
+ *               headline: { type: string }
+ *               city: { type: string }
+ *               profileSummary: { type: string }
+ *               photo: { type: string, format: binary, description: "Profile photo file upload" }
  *     responses:
  *       200:
  *         description: Curriculum created
@@ -58,6 +74,7 @@ const CurriculumController = require('../controllers/curriculum')
  *               message: Success!
  *               statusCode: 200
  *               content:
+ *                 id: "665f1c2b8f1b2c0012a3b457"
  *                 user: "665f1c2b8f1b2c0012a3b456"
  *                 fullName: "Jane Doe"
  *                 headline: "Backend Engineer"
@@ -199,6 +216,16 @@ const CurriculumController = require('../controllers/curriculum')
  *                 items:
  *                   type: object
  *                   properties: { label: { type: string }, url: { type: string } }
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               user: { type: string }
+ *               fullName: { type: string }
+ *               headline: { type: string }
+ *               city: { type: string }
+ *               profileSummary: { type: string }
+ *               photo: { type: string, format: binary, description: "Replaces the profile photo file" }
  *     responses:
  *       200:
  *         description: Curriculum replaced
@@ -230,6 +257,15 @@ const CurriculumController = require('../controllers/curriculum')
  *               city: { type: string }
  *               profileSummary: { type: string }
  *           example: { headline: "Senior Backend Engineer" }
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               fullName: { type: string }
+ *               headline: { type: string }
+ *               city: { type: string }
+ *               profileSummary: { type: string }
+ *               photo: { type: string, format: binary, description: "Replaces the profile photo file (any other omitted field is left unchanged)" }
  *     responses:
  *       200:
  *         description: Curriculum updated

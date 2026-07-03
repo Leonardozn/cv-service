@@ -194,13 +194,14 @@ class CurriculumService {
 			}
 		}
 
-		// 3. Proactive cleanup: Map paths from both objects to ensure we catch removed fields
+		// 3. Proactive cleanup: PATCH is a partial update (findByIdAndUpdate only $sets the
+		// submitted fields), so only delete a file when its field was actually part of this
+		// request (new upload or an explicit clear) - never for a field the client didn't touch,
+		// or the DB would keep pointing at a file we just deleted.
 		const mappedPathsData = this._getFilePaths(data)
-		const mappedPathsOld = this._getFilePaths(existingObj)
-		const allPaths = [...new Set([...mappedPathsData, ...mappedPathsOld])]
 
-		if (allPaths.length > 0) {
-			for (const filePath of allPaths) {
+		if (mappedPathsData.length > 0) {
+			for (const filePath of mappedPathsData) {
 				const newValue = this._getValueByPath(data, filePath)
 				const oldValue = this._getValueByPath(existingObj, filePath)
 				if (oldValue && oldValue !== newValue) {
@@ -344,8 +345,12 @@ class CurriculumService {
 	}
 
 	_normalizeContractPayload(payload) {
-		if (payload && typeof payload.toObject === 'function') return payload.toObject()
-		return payload
+		const plain = payload && typeof payload.toObject === 'function' ? payload.toObject() : payload
+		// The contract only ever copies keys it declares (see contracts/index.js), and Mongo's
+		// own key is '_id' - alias it to 'id' here so the contract can expose a clean identifier
+		// instead of leaving every response without any way to reference the record afterwards.
+		if (plain && typeof plain === 'object' && '_id' in plain) return { ...plain, id: String(plain._id) }
+		return plain
 	}
 
 	_getFilePaths(payload) {

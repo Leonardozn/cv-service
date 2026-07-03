@@ -1,6 +1,15 @@
 const { test, beforeEach } = require('node:test')
 const assert = require('node:assert/strict')
+
+// envVariables.js reads process.env once at require time (via dotenv, relative to cwd) - set it
+// explicitly before anything transitively requires it, so the file-cleanup path this test
+// exercises (services/curriculum.js's _getFilePaths(), gated on API_FILE_FIELDS) behaves the same
+// whether this file runs via `npm test`, `npm test --workspace=apps/api`, or a bare `node --test`
+// (each changes cwd, so relying on a real .env would make this test cwd-dependent).
+process.env.API_FILE_FIELDS = process.env.API_FILE_FIELDS || 'photo'
+
 const MockRepository = require('../../support/mock-repository-preload')
+const MockFileManagerHandler = require('../../support/mock-file-manager-preload')
 const CurriculumService = require('../../../src/services/curriculum')
 
 // A complete record matching every field declared for 'curriculum' in settings.json - used as
@@ -35,14 +44,20 @@ function seed() {
 
 beforeEach(() => {
 	MockRepository.reset()
+	MockFileManagerHandler.reset()
 })
+
+function fakeUploadedFile(originalname = 'photo.png') {
+	return { fieldname: 'photo', originalname, path: '/tmp/upload-src', destination: '/tmp', mimetype: 'image/png' }
+}
 
 test('curriculum service add() — creates and returns the contract-filtered record', async () => {
 	const service = CurriculumService.getInstance()
 
 	const result = await service.add({ body: SAMPLE })
 
-	assert.deepEqual(result, SAMPLE)
+	assert.match(result.id, /^[0-9a-f]{24}$/)
+	assert.deepEqual(result, { ...SAMPLE, id: result.id })
 })
 
 test('curriculum service findOne() — returns the contract-filtered record by id', async () => {
@@ -51,7 +66,7 @@ test('curriculum service findOne() — returns the contract-filtered record by i
 
 	const result = await service.findOne({ id: SEED_ID })
 
-	assert.deepEqual(result, SAMPLE)
+	assert.deepEqual(result, { ...SAMPLE, id: SEED_ID })
 })
 
 test('curriculum service findOne() — throws when the record does not exist', async () => {
@@ -68,7 +83,7 @@ test('curriculum service list() — returns count and contract-filtered records'
 	const result = await service.list({})
 
 	assert.equal(result.count, 1)
-	assert.deepEqual(result.records, [SAMPLE])
+	assert.deepEqual(result.records, [{ ...SAMPLE, id: SEED_ID }])
 })
 
 test('curriculum service update() — patches and returns the contract-filtered record', async () => {
@@ -77,7 +92,7 @@ test('curriculum service update() — patches and returns the contract-filtered 
 
 	const result = await service.update({ id: SEED_ID, body: SAMPLE })
 
-	assert.deepEqual(result, SAMPLE)
+	assert.deepEqual(result, { ...SAMPLE, id: SEED_ID })
 })
 
 test('curriculum service replace() — replaces and returns the contract-filtered record', async () => {
@@ -86,7 +101,7 @@ test('curriculum service replace() — replaces and returns the contract-filtere
 
 	const result = await service.replace({ id: SEED_ID, body: SAMPLE })
 
-	assert.deepEqual(result, SAMPLE)
+	assert.deepEqual(result, { ...SAMPLE, id: SEED_ID })
 })
 
 test('curriculum service remove() — deletes the record', async () => {
@@ -98,4 +113,39 @@ test('curriculum service remove() — deletes the record', async () => {
 	assert.equal(result.deletedCount, 1)
 
 	await assert.rejects(() => service.findOne({ id: SEED_ID }))
+})
+
+test('curriculum service add() — saves an uploaded photo and stores the returned filename (FR photo upload)', async () => {
+	const service = CurriculumService.getInstance()
+	const body = { ...SAMPLE }
+	delete body.photo
+
+	const result = await service.add({ body, files: [fakeUploadedFile('me.png')] })
+
+	assert.match(result.photo, /^curriculum-[^-]+(-[^-]+){4}-me\.png$/)
+	const storage = MockFileManagerHandler.getInstance().getProvider()
+	assert.deepEqual(storage.saved.map(s => s.newFilename), [result.photo])
+})
+
+test('curriculum service update() — uploading a new photo deletes the previous file and stores the new one', async () => {
+	seed()
+	const service = CurriculumService.getInstance()
+
+	const result = await service.update({ id: SEED_ID, body: {}, files: [fakeUploadedFile('new.png')] })
+
+	assert.match(result.photo, /^curriculum-[^-]+(-[^-]+){4}-new\.png$/)
+	const storage = MockFileManagerHandler.getInstance().getProvider()
+	assert.deepEqual(storage.deleted.map(d => d.filename), [SAMPLE.photo])
+})
+
+test('curriculum service update() — patching an unrelated field preserves the existing photo (no deletion)', async () => {
+	seed()
+	const service = CurriculumService.getInstance()
+
+	const result = await service.update({ id: SEED_ID, body: { headline: 'Updated headline' } })
+
+	assert.equal(result.photo, SAMPLE.photo)
+	assert.equal(result.headline, 'Updated headline')
+	const storage = MockFileManagerHandler.getInstance().getProvider()
+	assert.deepEqual(storage.deleted, [])
 })
