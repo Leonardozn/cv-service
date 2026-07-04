@@ -54,7 +54,7 @@ test('template list — count reflects every created record', async () => {
 	try {
 		for (const record of RECORDS) await app.request('POST', `${app.path}/template`, record, ADMIN_AUTH)
 
-		const res = await app.request('GET', `${app.path}/template`)
+		const res = await app.request('GET', `${app.path}/template`, undefined, ADMIN_AUTH)
 
 		assert.equal(res.status, 200)
 		assert.equal(res.body.content.count, RECORDS.length)
@@ -69,7 +69,7 @@ test('template list — pagination slices the result set', async () => {
 	try {
 		for (const record of RECORDS) await app.request('POST', `${app.path}/template`, record, ADMIN_AUTH)
 
-		const res = await app.request('GET', `${app.path}/template?size=2&page=1`)
+		const res = await app.request('GET', `${app.path}/template?size=2&page=1`, undefined, ADMIN_AUTH)
 
 		assert.equal(res.status, 200)
 		assert.equal(res.body.content.count, RECORDS.length)
@@ -85,7 +85,7 @@ test('template list — equality filter on name (FR-G8)', async () => {
 	try {
 		for (const record of RECORDS) await app.request('POST', `${app.path}/template`, record, ADMIN_AUTH)
 
-		const res = await app.request('GET', `${app.path}/template?query[name]=${RECORDS[1].name}`)
+		const res = await app.request('GET', `${app.path}/template?query[name]=${RECORDS[1].name}`, undefined, ADMIN_AUTH)
 
 		assert.equal(res.status, 200)
 		assert.equal(res.body.content.count, 1)
@@ -101,7 +101,7 @@ test('template list — sort by name (FR-G8)', async () => {
 	try {
 		for (const record of RECORDS) await app.request('POST', `${app.path}/template`, record, ADMIN_AUTH)
 
-		const res = await app.request('GET', `${app.path}/template?sort[name]=-1`)
+		const res = await app.request('GET', `${app.path}/template?sort[name]=-1`, undefined, ADMIN_AUTH)
 
 		assert.equal(res.status, 200)
 		const values = res.body.content.records.map(r => r.name)
@@ -118,7 +118,7 @@ test('template list — query[active]=true returns only the active Templates off
 		await app.request('POST', `${app.path}/template`, { name: 'Classic two columns', key: 'classic-two-columns', description: 'Two-column layout', active: true }, ADMIN_AUTH)
 		await app.request('POST', `${app.path}/template`, { name: 'Retired design', key: 'retired-design', description: 'No longer offered', active: false }, ADMIN_AUTH)
 
-		const res = await app.request('GET', `${app.path}/template?query[active]=true`)
+		const res = await app.request('GET', `${app.path}/template?query[active]=true`, undefined, ADMIN_AUTH)
 
 		assert.equal(res.status, 200)
 		assert.equal(res.body.content.count, 1)
