@@ -79,6 +79,14 @@ middlewares.push({
 	methods: [authMiddleware.requireRole('admin')]
 })
 
+// Generating a Curriculum's PDF requires an authenticated user - the ownership check itself
+// (confirming the loaded Curriculum belongs to req.user) happens in PdfGenerationService, once
+// the Curriculum is loaded, so it can respond 404 (not 403) for someone else's Curriculum.
+middlewares.push({
+	includeInPaths: [{ name: '/generate-pdf', method: 'post' }],
+	methods: [authMiddleware.requireAuth()]
+})
+
 server.setRoutes({
 	mainPath: envVarsHandler.API_PATH,
 	routes,

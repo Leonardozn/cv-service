@@ -4,8 +4,14 @@ const { runApp } = require('../../support/run-app')
 
 // Generic request/response wiring for every 'curriculum' route (DB mocked) - this tier checks
 // the envelope and routing, not exhaustive field coverage (that's tests/crud/curriculum.test.js).
+// generate-pdf requires an authenticated user (auth-service itself is mocked - see
+// mock-external-api-config-preload.js's fixed-token fallback); 'user-token' resolves to the
+// 'fixture-user' id, matching SAMPLE.user below, so the ownership check passes for it.
+const OWNER_AUTH = { Authorization: 'Bearer user-token' }
+const OTHER_USER_AUTH = { Authorization: 'Bearer admin-token' }
+
 const SAMPLE = {
-		"user": "sample text",
+		"user": "fixture-user",
 		"fullName": "sample text",
 		"headline": "sample text",
 		"city": "sample text",
@@ -126,14 +132,40 @@ test('curriculum routes — DELETE removes the seeded record', async () => {
 	}
 })
 
-test('curriculum routes — POST :id/generate-pdf returns 404 when the Curriculum does not exist', async () => {
+test('curriculum routes — POST :id/generate-pdf returns 401 without a token', async () => {
 	const app = await runApp()
 
 	try {
 		const res = await app.request('POST', `${app.path}/curriculum/${SEED_ID}/generate-pdf`)
 
+		assert.equal(res.status, 401)
+		assert.equal(res.body.success, false)
+	} finally {
+		await app.stop()
+	}
+})
+
+test('curriculum routes — POST :id/generate-pdf returns 404 when the Curriculum does not exist', async () => {
+	const app = await runApp()
+
+	try {
+		const res = await app.request('POST', `${app.path}/curriculum/${SEED_ID}/generate-pdf`, undefined, OWNER_AUTH)
+
 		assert.equal(res.status, 404)
 		assert.equal(res.body.success, false)
+	} finally {
+		await app.stop()
+	}
+})
+
+test('curriculum routes — POST :id/generate-pdf returns 404 when the Curriculum belongs to a different user (FR ownership)', async () => {
+	const app = await runApp(seededEnv())
+
+	try {
+		const res = await app.request('POST', `${app.path}/curriculum/${SEED_ID}/generate-pdf`, undefined, OTHER_USER_AUTH)
+
+		assert.equal(res.status, 404)
+		assert.equal(res.body.message, 'Curriculum not found.')
 	} finally {
 		await app.stop()
 	}
@@ -143,7 +175,7 @@ test('curriculum routes — POST :id/generate-pdf returns 400 when no Template i
 	const app = await runApp(seededEnv())
 
 	try {
-		const res = await app.request('POST', `${app.path}/curriculum/${SEED_ID}/generate-pdf`)
+		const res = await app.request('POST', `${app.path}/curriculum/${SEED_ID}/generate-pdf`, undefined, OWNER_AUTH)
 
 		assert.equal(res.status, 400)
 		assert.equal(res.body.message, 'No active Template is configured.')
@@ -158,7 +190,7 @@ test('curriculum routes — POST :id/generate-pdf renders a real PDF binary usin
 	try {
 		await app.request('POST', `${app.path}/template`, { name: 'Classic two columns', key: 'classic-two-columns', description: 'Two-column layout', active: true }, { Authorization: 'Bearer admin-token' })
 
-		const res = await fetch(`${app.baseUrl}${app.path}/curriculum/${SEED_ID}/generate-pdf`, { method: 'POST' })
+		const res = await fetch(`${app.baseUrl}${app.path}/curriculum/${SEED_ID}/generate-pdf`, { method: 'POST', headers: OWNER_AUTH })
 		const buffer = Buffer.from(await res.arrayBuffer())
 
 		assert.equal(res.status, 200)

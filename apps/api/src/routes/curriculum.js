@@ -313,7 +313,10 @@ const CurriculumController = require('../controllers/curriculum')
  *       using the given Template's design, on-demand and without persisting any history. The PDF
  *       is returned as a binary download (`Content-Type: application/pdf`), not the standard
  *       `{ success, message, statusCode, content }` envelope - only error responses use that
- *       envelope.
+ *       envelope. Requires an authenticated user; the Curriculum must belong to the caller (a
+ *       Curriculum owned by someone else is reported as 404, same as one that doesn't exist).
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -341,13 +344,17 @@ const CurriculumController = require('../controllers/curriculum')
  *           (generated findOne raises BadRequestError), or no Template is active and none was
  *           requested.
  *         content: { application/json: { example: { success: false, message: "Template not found.", statusCode: 400, content: null } } }
+ *       401:
+ *         description: Missing/malformed Authorization header, or an invalid/expired session (observed against the running app)
+ *         content: { application/json: { example: { success: false, message: "Missing or malformed Authorization header.", statusCode: 401, content: null } } }
  *       404:
  *         description: |
- *           No Curriculum matches the given id. Observed against the running app for both a
- *           well-formed id that matches nothing and a syntactically invalid `id` (e.g.
- *           `/curriculum/not-an-id/generate-pdf`) - this action's Curriculum lookup maps any
- *           failure to resolve it to 404, unlike the generic CRUD `findOne` (which lets a
- *           malformed id surface as a 500).
+ *           No Curriculum matches the given id, the id is syntactically invalid (e.g.
+ *           `/curriculum/not-an-id/generate-pdf` - this action's Curriculum lookup maps any
+ *           failure to resolve it to 404, unlike the generic CRUD `findOne` which lets a malformed
+ *           id surface as a 500), or the Curriculum exists but belongs to a different user (FR
+ *           ownership - reported identically to "doesn't exist" so a caller can't probe for other
+ *           users' Curriculum ids). All three observed against the running app.
  *         content: { application/json: { example: { success: false, message: "Curriculum not found.", statusCode: 404, content: null } } }
  *       500:
  *         description: |
