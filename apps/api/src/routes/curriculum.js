@@ -14,12 +14,17 @@ const CurriculumController = require('../controllers/curriculum')
  * /curriculum:
  *   post:
  *     tags: [Curriculum]
- *     summary: Create a Curriculum
+ *     summary: Create (or save) a Curriculum
  *     description: |
- *       Accepts either a JSON body, or `multipart/form-data` when uploading the profile photo as
- *       a file (field name `photo`) - the stored filename is what ends up in the `photo` response
- *       field, never the file itself. `contactLinks`/`skills` are not uploadable as multipart
- *       array fields in this API; send those via the JSON variant.
+ *       Saves the caller's Curriculum: if the given `user` already has one, this updates it
+ *       instead of creating a second one (max one Curriculum per user, `user` is unique) - the
+ *       request always succeeds the same way either way, only the underlying create/update
+ *       differs. Any name in `skills` that isn't already in the Skill catalog is auto-registered
+ *       there as active, so future callers get it as an autocomplete suggestion; both writes run
+ *       in the same transaction. Accepts either a JSON body, or `multipart/form-data` when
+ *       uploading the profile photo as a file (field name `photo`) - the stored filename is what
+ *       ends up in the `photo` response field, never the file itself. `contactLinks`/`skills` are
+ *       not uploadable as multipart array fields in this API; send those via the JSON variant.
  *     requestBody:
  *       required: true
  *       content:
@@ -239,6 +244,9 @@ const CurriculumController = require('../controllers/curriculum')
  *   patch:
  *     tags: [Curriculum]
  *     summary: Update a Curriculum
+ *     description: |
+ *       Any name in `skills` that isn't already in the Skill catalog is auto-registered there as
+ *       active (same rule as `POST /curriculum`); both writes run in the same transaction.
  *     parameters:
  *       - in: path
  *         name: id
