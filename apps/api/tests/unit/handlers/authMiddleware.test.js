@@ -47,6 +47,21 @@ test('requireAuth() — injects req.user and calls next() with no error on a val
 	assert.deepEqual(axiosMock.calls, [{ url: '/auth/validate', body: { token: 'good-token' } }])
 })
 
+// auth-service's own user contract exposes only `_id`, never `id` (confirmed against the
+// sibling auth-service repo) - req.user.id must be derived from it so every consumer can rely
+// on a stable `id` field regardless of the connected auth-service's raw field name.
+test('requireAuth() — derives req.user.id from _id when auth-service only returns _id (FR user id normalization)', async () => {
+	axiosMock.queueResponse({ status: 200, data: { success: true, message: 'Success!', statusCode: 200, content: { user: { _id: 'u1', role: 'user' } } } })
+	const middleware = AuthMiddlewareHandler.getInstance().requireAuth()
+	const req = fakeReq('good-token')
+	const res = fakeRes()
+
+	await middleware(req, res, () => {})
+
+	assert.equal(req.user.id, 'u1')
+	assert.equal(req.user._id, 'u1')
+})
+
 test('requireAuth() — responds 401 when the Authorization header is missing', async () => {
 	const middleware = AuthMiddlewareHandler.getInstance().requireAuth()
 	const req = fakeReq()
