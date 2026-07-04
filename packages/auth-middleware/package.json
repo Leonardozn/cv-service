@@ -1,0 +1,10 @@
+{
+	"name": "@cv-service/auth-middleware",
+	"version": "1.0.0",
+	"main": "index.js",
+	"dependencies": {
+		"@cv-service/external-api-config": "*",
+		"@cv-service/handle-errors": "*",
+		"@cv-service/env-variables": "*"
+	}
+}

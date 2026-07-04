@@ -22,6 +22,7 @@
     "@cv-service/db-connections": "*",
     "@cv-service/data-validator": "*",
     "@cv-service/entity-queries": "*",
-    "@cv-service/pdf-generator": "*"
+    "@cv-service/pdf-generator": "*",
+    "@cv-service/auth-middleware": "*"
   }
 }
