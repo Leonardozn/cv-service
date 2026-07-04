@@ -109,3 +109,20 @@ test('template list — sort by name (FR-G8)', async () => {
 	}
 })
 
+test('template list — query[active]=true returns only the active Templates offered in the design selector', async () => {
+	const app = await runApp()
+
+	try {
+		await app.request('POST', `${app.path}/template`, { name: 'Classic two columns', key: 'classic-two-columns', description: 'Two-column layout', active: true })
+		await app.request('POST', `${app.path}/template`, { name: 'Retired design', key: 'retired-design', description: 'No longer offered', active: false })
+
+		const res = await app.request('GET', `${app.path}/template?query[active]=true`)
+
+		assert.equal(res.status, 200)
+		assert.equal(res.body.content.count, 1)
+		assert.equal(res.body.content.records[0].name, 'Classic two columns')
+	} finally {
+		await app.stop()
+	}
+})
+

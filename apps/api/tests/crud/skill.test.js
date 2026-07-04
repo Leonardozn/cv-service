@@ -103,3 +103,21 @@ test('skill list — sort by name (FR-G8)', async () => {
 	}
 })
 
+test('skill list — query[active]=true returns only the active Skills offered as autocomplete suggestions', async () => {
+	const app = await runApp()
+
+	try {
+		await app.request('POST', `${app.path}/skill`, { name: 'Node.js', active: true })
+		await app.request('POST', `${app.path}/skill`, { name: 'MongoDB', active: true })
+		await app.request('POST', `${app.path}/skill`, { name: 'COBOL', active: false })
+
+		const res = await app.request('GET', `${app.path}/skill?query[active]=true`)
+
+		assert.equal(res.status, 200)
+		assert.equal(res.body.content.count, 2)
+		assert.deepEqual(res.body.content.records.map(r => r.name).sort(), ['MongoDB', 'Node.js'])
+	} finally {
+		await app.stop()
+	}
+})
+
