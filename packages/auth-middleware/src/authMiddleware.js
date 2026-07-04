@@ -100,7 +100,21 @@ class AuthMiddleware {
 	 */
 	async _callValidate(token) {
 		const response = await this.instance.post('/auth/validate', { token })
-		return (response.data && response.data.content && response.data.content.user) || null
+		const user = (response.data && response.data.content && response.data.content.user) || null
+		return user && this._normalizeUser(user)
+	}
+
+	/**
+	 * @private
+	 * auth-service's own contract exposes the user's Mongo id as `_id`, not `id` (see this
+	 * project's own services, which hit the identical `_id`/`id` mismatch on their generated
+	 * contracts). Since any easy-node service can plug in a different auth-service here, this
+	 * normalizes once at the boundary so every consumer can rely on a stable `user.id`
+	 * regardless of which raw field name the connected auth-service happens to return.
+	 */
+	_normalizeUser(user) {
+		if (user.id !== undefined) return user
+		return { ...user, id: user._id }
 	}
 
 	/**
