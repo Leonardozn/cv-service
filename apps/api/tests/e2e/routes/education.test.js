@@ -43,7 +43,7 @@ test('education routes — GET by id returns the seeded record', async () => {
 		const res = await app.request('GET', `${app.path}/education/${SEED_ID}`)
 
 		assert.equal(res.status, 200)
-		assert.deepEqual(res.body.content, SAMPLE)
+		assert.deepEqual(res.body.content, { ...SAMPLE, id: SEED_ID })
 	} finally {
 		await app.stop()
 	}
@@ -70,7 +70,7 @@ test('education routes — GET list returns the envelope shape', async () => {
 
 		assert.equal(res.status, 200)
 		assert.equal(res.body.content.count, 1)
-		assert.deepEqual(res.body.content.records, [SAMPLE])
+		assert.deepEqual(res.body.content.records, [{ ...SAMPLE, id: SEED_ID }])
 	} finally {
 		await app.stop()
 	}
@@ -83,7 +83,7 @@ test('education routes — PATCH updates the seeded record', async () => {
 		const res = await app.request('PATCH', `${app.path}/education/${SEED_ID}`, SAMPLE)
 
 		assert.equal(res.status, 200)
-		assert.deepEqual(res.body.content, SAMPLE)
+		assert.deepEqual(res.body.content, { ...SAMPLE, id: SEED_ID })
 	} finally {
 		await app.stop()
 	}
@@ -96,7 +96,7 @@ test('education routes — PUT replaces the seeded record', async () => {
 		const res = await app.request('PUT', `${app.path}/education/${SEED_ID}`, SAMPLE)
 
 		assert.equal(res.status, 200)
-		assert.deepEqual(res.body.content, SAMPLE)
+		assert.deepEqual(res.body.content, { ...SAMPLE, id: SEED_ID })
 	} finally {
 		await app.stop()
 	}

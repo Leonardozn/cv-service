@@ -12,6 +12,7 @@ class ExperienceContract {
 
 	getContract() {
 		return {
+			id: true,
 			curriculum: true,
 			position: true,
 			company: true,

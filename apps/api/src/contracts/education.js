@@ -12,6 +12,7 @@ class EducationContract {
 
 	getContract() {
 		return {
+			id: true,
 			curriculum: true,
 			title: true,
 			institution: true,
