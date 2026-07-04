@@ -295,6 +295,59 @@ const CurriculumController = require('../controllers/curriculum')
  *       500:
  *         description: Unexpected server error
  *         content: { application/json: { example: { success: false, message: "An error occurred", statusCode: 500, content: null } } }
+ *
+ * /curriculum/{id}/generate-pdf:
+ *   post:
+ *     tags: [Curriculum]
+ *     summary: Generate the Curriculum's PDF
+ *     description: |
+ *       Renders the Curriculum (with its Education/Experience/Certificate entries) into a PDF
+ *       using the given Template's design, on-demand and without persisting any history. The PDF
+ *       is returned as a binary download (`Content-Type: application/pdf`), not the standard
+ *       `{ success, message, statusCode, content }` envelope - only error responses use that
+ *       envelope.
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string }
+ *         description: Curriculum ObjectId
+ *     requestBody:
+ *       required: false
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               template: { type: string, description: "Template ObjectId to render with; omit to use the active default Template" }
+ *           example: { template: "665f1c2b8f1b2c0012a3b999" }
+ *     responses:
+ *       200:
+ *         description: PDF generated
+ *         content:
+ *           application/pdf:
+ *             schema: { type: string, format: binary }
+ *       400:
+ *         description: |
+ *           The requested `template` id is a syntactically valid ObjectId but matches no Template
+ *           (generated findOne raises BadRequestError), or no Template is active and none was
+ *           requested.
+ *         content: { application/json: { example: { success: false, message: "Template not found.", statusCode: 400, content: null } } }
+ *       404:
+ *         description: |
+ *           No Curriculum matches the given id. Observed against the running app for both a
+ *           well-formed id that matches nothing and a syntactically invalid `id` (e.g.
+ *           `/curriculum/not-an-id/generate-pdf`) - this action's Curriculum lookup maps any
+ *           failure to resolve it to 404, unlike the generic CRUD `findOne` (which lets a
+ *           malformed id surface as a 500).
+ *         content: { application/json: { example: { success: false, message: "Curriculum not found.", statusCode: 404, content: null } } }
+ *       500:
+ *         description: |
+ *           Unexpected server error. Also observed when a supplied `template` id is not a
+ *           syntactically valid ObjectId - that cast throws outside the Zod/BadRequestError paths
+ *           and surfaces as a generic 500 (unlike a malformed Curriculum `id`, which this action
+ *           maps to 404 - see above).
+ *         content: { application/json: { example: { success: false, message: "An unexpected error occurred. Please try again later.", statusCode: 500, content: null } } }
  */
 class CurriculumRouter {
 	/**
@@ -326,7 +379,8 @@ class CurriculumRouter {
 				{ requestMethod: 'get', path: '', controllerMethod: this.curriculumController.list },
 				{ requestMethod: 'put', path: '/:id', controllerMethod: this.curriculumController.replace },
 				{ requestMethod: 'patch', path: '/:id', controllerMethod: this.curriculumController.update },
-				{ requestMethod: 'delete', path: '/:id', controllerMethod: this.curriculumController.remove }
+				{ requestMethod: 'delete', path: '/:id', controllerMethod: this.curriculumController.remove },
+				{ requestMethod: 'post', path: '/:id/generate-pdf', controllerMethod: this.curriculumController.generatePdf }
 			]
 		}
 	}
