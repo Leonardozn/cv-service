@@ -12,6 +12,7 @@ class TemplateContract {
 
 	getContract() {
 		return {
+			id: true,
 			name: true,
 			key: true,
 			description: true,
