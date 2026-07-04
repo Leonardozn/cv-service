@@ -325,6 +325,7 @@ test('curriculum routes — POST :id/generate-pdf renders a real PDF binary usin
 
 		assert.equal(res.status, 200)
 		assert.equal(res.headers.get('content-type'), 'application/pdf')
+		assert.equal(res.headers.get('content-disposition'), 'inline; filename="curriculum.pdf"')
 		assert.equal(buffer.subarray(0, 5).toString('latin1'), '%PDF-')
 	} finally {
 		await app.stop()

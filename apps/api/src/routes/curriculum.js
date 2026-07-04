@@ -390,7 +390,10 @@ const CurriculumController = require('../controllers/curriculum')
  *           example: { template: "665f1c2b8f1b2c0012a3b999" }
  *     responses:
  *       200:
- *         description: PDF generated
+ *         description: |
+ *           PDF generated. Sent with `Content-Disposition: inline; filename="curriculum.pdf"` so
+ *           browsers open it directly instead of forcing a generic download, and so clients like
+ *           Swagger UI show a named "Download file" link for this binary response.
  *         content:
  *           application/pdf:
  *             schema: { type: string, format: binary }
