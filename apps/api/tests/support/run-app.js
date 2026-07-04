@@ -1,9 +1,10 @@
 'use strict'
 
 // Shared test helper: boots this app as a real subprocess (DB mocked via
-// mock-repository-preload.js), waits for it to come up, and returns request/stop helpers.
-// Used by smoke/e2e/crud tests - never required by unit tests, which exercise the service
-// in-process instead.
+// mock-repository-preload.js, and the raw connection handler used for transactions mocked via
+// mock-db-connections-preload.js - see data-transactions-multi-write), waits for it to come up,
+// and returns request/stop helpers. Used by smoke/e2e/crud tests - never required by unit tests,
+// which exercise the service in-process instead.
 
 const { spawn } = require('node:child_process')
 const net = require('node:net')
@@ -11,6 +12,7 @@ const path = require('node:path')
 
 const APP_ROOT = path.join(__dirname, '..', '..')
 const PRELOAD = path.join(__dirname, 'mock-repository-preload.js')
+const DB_CONNECTIONS_PRELOAD = path.join(__dirname, 'mock-db-connections-preload.js')
 
 function getFreePort() {
 	return new Promise((resolve, reject) => {
@@ -54,7 +56,7 @@ async function runApp(extraEnv = {}) {
 	const appPath = env.API_PATH || ''
 	const baseUrl = `http://localhost:${port}`
 
-	const child = spawn(process.execPath, ['--require', PRELOAD, 'index.js'], {
+	const child = spawn(process.execPath, ['--require', PRELOAD, '--require', DB_CONNECTIONS_PRELOAD, 'index.js'], {
 		cwd: APP_ROOT,
 		env,
 		stdio: 'pipe'

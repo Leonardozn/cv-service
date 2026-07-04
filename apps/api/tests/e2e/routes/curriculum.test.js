@@ -168,3 +168,35 @@ test('curriculum routes — POST :id/generate-pdf renders a real PDF binary usin
 		await app.stop()
 	}
 })
+
+test('curriculum routes — POST /curriculum twice with the same user updates it instead of creating a second one (FR save)', async () => {
+	const app = await runApp()
+
+	try {
+		const first = await app.request('POST', `${app.path}/curriculum`, { ...SAMPLE, user: 'same-user' })
+		const second = await app.request('POST', `${app.path}/curriculum`, { ...SAMPLE, user: 'same-user', headline: 'Updated headline' })
+
+		assert.equal(second.body.content.id, first.body.content.id)
+		assert.equal(second.body.content.headline, 'Updated headline')
+
+		const list = await app.request('GET', `${app.path}/curriculum`)
+		assert.equal(list.body.content.count, 1)
+	} finally {
+		await app.stop()
+	}
+})
+
+test('curriculum routes — POST /curriculum registers any new skill in the Skill catalog (FR save)', async () => {
+	const app = await runApp()
+
+	try {
+		await app.request('POST', `${app.path}/curriculum`, { ...SAMPLE, user: 'user-with-skills', skills: ['Node.js', 'MongoDB'] })
+
+		const skills = await app.request('GET', `${app.path}/skill`)
+		assert.equal(skills.body.content.count, 2)
+		assert.deepEqual(skills.body.content.records.map(skill => skill.name).sort(), ['MongoDB', 'Node.js'])
+		assert.ok(skills.body.content.records.every(skill => skill.active === true))
+	} finally {
+		await app.stop()
+	}
+})

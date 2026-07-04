@@ -1,4 +1,5 @@
 const CurriculumService = require('../services/curriculum')
+const CurriculumManagementService = require('../services/curriculumManagement')
 const PdfGenerationService = require('../services/pdfGeneration')
 const HandleResponseHandler = require('../handlers/handleResponse')
 
@@ -24,6 +25,7 @@ class CurriculumController {
 		this.responseBody = this.handleResponseHandler.getResponseBody()
 
 		this.curriculumService = CurriculumService.getInstance()
+		this.curriculumManagementService = CurriculumManagementService.getInstance()
 		this.pdfGenerationService = PdfGenerationService.getInstance()
 
 		this.add = this.add.bind(this)
@@ -42,7 +44,7 @@ class CurriculumController {
 
 	async add(req, res) {
 		try {
-			const curriculum = await this.curriculumService.add({ body: req.body, files: req.files })
+			const curriculum = await this.curriculumManagementService.save({ body: req.body, files: req.files })
 			const response = this.handleResponseHandler.buildResponse(curriculum)
 	
 			res.status(response[this.responseBody.STATUS]).json(response)
@@ -84,7 +86,7 @@ class CurriculumController {
 	
 	async update(req, res) {
 		try {
-			const curriculum = await this.curriculumService.update({ body: req.body, id: req.params.id, files: req.files })
+			const curriculum = await this.curriculumManagementService.saveEntry({ body: req.body, id: req.params.id, files: req.files })
 			const response = this.handleResponseHandler.buildResponse(curriculum)
 	
 			res.status(response[this.responseBody.STATUS]).json(response)
