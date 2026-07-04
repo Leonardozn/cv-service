@@ -1,5 +1,6 @@
 const ExternalApiConfig = require('@cv-service/external-api-config')
 const { UnauthorizedError, ForbiddenError } = require('@cv-service/handle-errors')
+const { HandleResponse, ResponseBody } = require('@cv-service/handle-response')
 const envVariables = require('@cv-service/env-variables')
 
 const BEARER_PATTERN = /^Bearer (.+)$/i
@@ -11,6 +12,7 @@ const BEARER_PATTERN = /^Bearer (.+)$/i
 class AuthMiddleware {
 	constructor() {
 		this.externalApiConfig = new ExternalApiConfig()
+		this.handleResponse = new HandleResponse()
 		this.instance = this.externalApiConfig.createInstance({
 			baseURL: envVariables.AUTH_SERVICE_URL || 'http://localhost:4000',
 			timeout: 5000,
@@ -28,7 +30,7 @@ class AuthMiddleware {
 				req.user = await this._resolveUser(req)
 				next()
 			} catch (error) {
-				next(error)
+				this._sendError(res, error)
 			}
 		}
 	}
@@ -41,9 +43,22 @@ class AuthMiddleware {
 				if (req.user.role !== role) throw new ForbiddenError(`This action requires the '${role}' role.`)
 				next()
 			} catch (error) {
-				next(error)
+				this._sendError(res, error)
 			}
 		}
+	}
+
+	/**
+	 * @private
+	 * This project (like any easy-node service) has no global Express error-handling
+	 * middleware - every layer builds and sends its own error response via handle-response,
+	 * exactly like a controller's own try/catch does. A middleware is no exception: it must
+	 * own its error response rather than call next(error), which would fall through to
+	 * Express's default (non-JSON) error handler.
+	 */
+	_sendError(res, error) {
+		const response = this.handleResponse.buildResponse(error)
+		res.status(response[ResponseBody.STATUS]).json(response)
 	}
 
 	/**

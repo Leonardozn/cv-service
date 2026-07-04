@@ -18,6 +18,9 @@ const FileManagerHandler = require('./src/handlers/fileManager')
 const fileManager = FileManagerHandler.getInstance()
 const path = require('path')
 
+const AuthMiddlewareHandler = require('./src/handlers/authMiddleware')
+const authMiddleware = AuthMiddlewareHandler.getInstance()
+
 const envVarsHandler = require('./src/handlers/envVariables')
 
 const port = envVarsHandler.API_PORT
@@ -62,6 +65,19 @@ if (uploadPaths.length > 0) {
 		methods: [fileManager.getMiddleware().any()]
 	})
 }
+
+// Catalog write access is admin-only (read stays public - see routes/skill.js, routes/template.js).
+// A new Skill's automatic registration when a CV is saved goes through SkillService.add()
+// in-process (services/commands/registerNewSkills.js), never through this HTTP route, so it's
+// unaffected by this gate.
+const adminWriteMethods = ['post', 'put', 'patch', 'delete']
+middlewares.push({
+	includeInPaths: [
+		...adminWriteMethods.map(method => ({ name: '/skill', method })),
+		...adminWriteMethods.map(method => ({ name: '/template', method }))
+	],
+	methods: [authMiddleware.requireRole('admin')]
+})
 
 server.setRoutes({
 	mainPath: envVarsHandler.API_PATH,

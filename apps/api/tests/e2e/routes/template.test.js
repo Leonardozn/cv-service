@@ -4,6 +4,11 @@ const { runApp } = require('../../support/run-app')
 
 // Generic request/response wiring for every 'template' route (DB mocked) - this tier checks
 // the envelope and routing, not exhaustive field coverage (that's tests/crud/template.test.js).
+// Writes require the admin role (see index.js's middlewares wiring); auth-service itself is
+// mocked (mock-external-api-config-preload.js), which resolves these fixed tokens deterministically.
+const ADMIN_AUTH = { Authorization: 'Bearer admin-token' }
+const USER_AUTH = { Authorization: 'Bearer user-token' }
+
 const SAMPLE = {
 		"name": "sample text",
 		"key": "sample text",
@@ -21,11 +26,11 @@ function seededEnv() {
 	}
 }
 
-test('template routes — POST creates a record', async () => {
+test('template routes — POST creates a record when the caller is admin', async () => {
 	const app = await runApp()
 
 	try {
-		const res = await app.request('POST', `${app.path}/template`, SAMPLE)
+		const res = await app.request('POST', `${app.path}/template`, SAMPLE, ADMIN_AUTH)
 
 		assert.equal(res.status, 200)
 		assert.equal(res.body.success, true)
@@ -35,7 +40,33 @@ test('template routes — POST creates a record', async () => {
 	}
 })
 
-test('template routes — GET by id returns the seeded record', async () => {
+test('template routes — POST returns 401 without a token', async () => {
+	const app = await runApp()
+
+	try {
+		const res = await app.request('POST', `${app.path}/template`, SAMPLE)
+
+		assert.equal(res.status, 401)
+		assert.equal(res.body.success, false)
+	} finally {
+		await app.stop()
+	}
+})
+
+test('template routes — POST returns 403 when the caller is not admin', async () => {
+	const app = await runApp()
+
+	try {
+		const res = await app.request('POST', `${app.path}/template`, SAMPLE, USER_AUTH)
+
+		assert.equal(res.status, 403)
+		assert.equal(res.body.success, false)
+	} finally {
+		await app.stop()
+	}
+})
+
+test('template routes — GET by id returns the seeded record (public, no token needed)', async () => {
 	const app = await runApp(seededEnv())
 
 	try {
@@ -61,7 +92,7 @@ test('template routes — GET by id returns 400 when the record does not exist',
 	}
 })
 
-test('template routes — GET list returns the envelope shape', async () => {
+test('template routes — GET list returns the envelope shape (public, no token needed)', async () => {
 	const app = await runApp(seededEnv())
 
 	try {
@@ -75,11 +106,11 @@ test('template routes — GET list returns the envelope shape', async () => {
 	}
 })
 
-test('template routes — PATCH updates the seeded record', async () => {
+test('template routes — PATCH updates the seeded record when the caller is admin', async () => {
 	const app = await runApp(seededEnv())
 
 	try {
-		const res = await app.request('PATCH', `${app.path}/template/${SEED_ID}`, SAMPLE)
+		const res = await app.request('PATCH', `${app.path}/template/${SEED_ID}`, SAMPLE, ADMIN_AUTH)
 
 		assert.equal(res.status, 200)
 		assert.deepEqual(res.body.content, { ...SAMPLE, id: SEED_ID })
@@ -88,11 +119,11 @@ test('template routes — PATCH updates the seeded record', async () => {
 	}
 })
 
-test('template routes — PUT replaces the seeded record', async () => {
+test('template routes — PUT replaces the seeded record when the caller is admin', async () => {
 	const app = await runApp(seededEnv())
 
 	try {
-		const res = await app.request('PUT', `${app.path}/template/${SEED_ID}`, SAMPLE)
+		const res = await app.request('PUT', `${app.path}/template/${SEED_ID}`, SAMPLE, ADMIN_AUTH)
 
 		assert.equal(res.status, 200)
 		assert.deepEqual(res.body.content, { ...SAMPLE, id: SEED_ID })
@@ -101,15 +132,27 @@ test('template routes — PUT replaces the seeded record', async () => {
 	}
 })
 
-test('template routes — DELETE removes the seeded record', async () => {
+test('template routes — DELETE removes the seeded record when the caller is admin', async () => {
 	const app = await runApp(seededEnv())
 
 	try {
-		const del = await app.request('DELETE', `${app.path}/template/${SEED_ID}`)
+		const del = await app.request('DELETE', `${app.path}/template/${SEED_ID}`, undefined, ADMIN_AUTH)
 		assert.equal(del.status, 200)
 
 		const after = await app.request('GET', `${app.path}/template/${SEED_ID}`)
 		assert.equal(after.status, 400)
+	} finally {
+		await app.stop()
+	}
+})
+
+test('template routes — DELETE returns 403 when the caller is not admin', async () => {
+	const app = await runApp(seededEnv())
+
+	try {
+		const res = await app.request('DELETE', `${app.path}/template/${SEED_ID}`, undefined, USER_AUTH)
+
+		assert.equal(res.status, 403)
 	} finally {
 		await app.stop()
 	}

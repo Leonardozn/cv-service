@@ -156,7 +156,7 @@ test('curriculum routes — POST :id/generate-pdf renders a real PDF binary usin
 	const app = await runApp(seededEnv())
 
 	try {
-		await app.request('POST', `${app.path}/template`, { name: 'Classic two columns', key: 'classic-two-columns', description: 'Two-column layout', active: true })
+		await app.request('POST', `${app.path}/template`, { name: 'Classic two columns', key: 'classic-two-columns', description: 'Two-column layout', active: true }, { Authorization: 'Bearer admin-token' })
 
 		const res = await fetch(`${app.baseUrl}${app.path}/curriculum/${SEED_ID}/generate-pdf`, { method: 'POST' })
 		const buffer = Buffer.from(await res.arrayBuffer())

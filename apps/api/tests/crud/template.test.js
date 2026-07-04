@@ -3,9 +3,11 @@ const assert = require('node:assert/strict')
 const { runApp } = require('../support/run-app')
 
 // Exhaustive list/filter/sort/pagination coverage for 'template' (DB mocked, L4-style) -
-// records are created through the real POST endpoint. The contract exposes the record as 'id'
-// (not Mongo's own '_id'), but list/filter/sort assertions below identify records by a known
-// field value rather than the generated id.
+// records are created through the real POST endpoint, which requires the admin role (auth-service
+// itself is mocked - see mock-external-api-config-preload.js's fixed 'admin-token'). The contract
+// exposes the record as 'id' (not Mongo's own '_id'), but list/filter/sort assertions below
+// identify records by a known field value rather than the generated id.
+const ADMIN_AUTH = { Authorization: 'Bearer admin-token' }
 const RECORDS = [
 		{
 			"name": "item-1",
@@ -31,7 +33,7 @@ test('template create — complete payload round-trips through the full envelope
 	const app = await runApp()
 
 	try {
-		const res = await app.request('POST', `${app.path}/template`, RECORDS[0])
+		const res = await app.request('POST', `${app.path}/template`, RECORDS[0], ADMIN_AUTH)
 
 		assert.equal(res.status, 200)
 		assert.match(res.body.content.id, /^[0-9a-f]{24}$/)
@@ -50,7 +52,7 @@ test('template list — count reflects every created record', async () => {
 	const app = await runApp()
 
 	try {
-		for (const record of RECORDS) await app.request('POST', `${app.path}/template`, record)
+		for (const record of RECORDS) await app.request('POST', `${app.path}/template`, record, ADMIN_AUTH)
 
 		const res = await app.request('GET', `${app.path}/template`)
 
@@ -65,7 +67,7 @@ test('template list — pagination slices the result set', async () => {
 	const app = await runApp()
 
 	try {
-		for (const record of RECORDS) await app.request('POST', `${app.path}/template`, record)
+		for (const record of RECORDS) await app.request('POST', `${app.path}/template`, record, ADMIN_AUTH)
 
 		const res = await app.request('GET', `${app.path}/template?size=2&page=1`)
 
@@ -81,7 +83,7 @@ test('template list — equality filter on name (FR-G8)', async () => {
 	const app = await runApp()
 
 	try {
-		for (const record of RECORDS) await app.request('POST', `${app.path}/template`, record)
+		for (const record of RECORDS) await app.request('POST', `${app.path}/template`, record, ADMIN_AUTH)
 
 		const res = await app.request('GET', `${app.path}/template?query[name]=${RECORDS[1].name}`)
 
@@ -97,7 +99,7 @@ test('template list — sort by name (FR-G8)', async () => {
 	const app = await runApp()
 
 	try {
-		for (const record of RECORDS) await app.request('POST', `${app.path}/template`, record)
+		for (const record of RECORDS) await app.request('POST', `${app.path}/template`, record, ADMIN_AUTH)
 
 		const res = await app.request('GET', `${app.path}/template?sort[name]=-1`)
 
@@ -113,8 +115,8 @@ test('template list — query[active]=true returns only the active Templates off
 	const app = await runApp()
 
 	try {
-		await app.request('POST', `${app.path}/template`, { name: 'Classic two columns', key: 'classic-two-columns', description: 'Two-column layout', active: true })
-		await app.request('POST', `${app.path}/template`, { name: 'Retired design', key: 'retired-design', description: 'No longer offered', active: false })
+		await app.request('POST', `${app.path}/template`, { name: 'Classic two columns', key: 'classic-two-columns', description: 'Two-column layout', active: true }, ADMIN_AUTH)
+		await app.request('POST', `${app.path}/template`, { name: 'Retired design', key: 'retired-design', description: 'No longer offered', active: false }, ADMIN_AUTH)
 
 		const res = await app.request('GET', `${app.path}/template?query[active]=true`)
 
