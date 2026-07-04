@@ -1,9 +1,11 @@
 const { MongooseEntityQueries } = require('@cv-service/entity-queries')
 
-const FieldsModel = require('../models/fields')
-const DbTypeModel = require('../models/dbType')
-const DbNameModel = require('../models/dbName')
-const CollectionNameModel = require('../models/collectionName')
+const CurriculumModel = require('../models/curriculum')
+const EducationModel = require('../models/education')
+const ExperienceModel = require('../models/experience')
+const CertificateModel = require('../models/certificate')
+const SkillModel = require('../models/skill')
+const TemplateModel = require('../models/template')
 
 class Repository {
 	/**
@@ -24,10 +26,12 @@ class Repository {
 
 	constructor() {
 		this.models = {
-			fields: FieldsModel,
-			dbType: DbTypeModel,
-			dbName: DbNameModel,
-			collectionName: CollectionNameModel
+			curriculum: CurriculumModel,
+			education: EducationModel,
+			experience: ExperienceModel,
+			certificate: CertificateModel,
+			skill: SkillModel,
+			template: TemplateModel
 		}
 
 		this.mongooseEntityQueries = MongooseEntityQueries.getInstance()
