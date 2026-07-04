@@ -128,7 +128,7 @@ class CurriculumController {
 
 	async generatePdf(req, res) {
 		try {
-			const buffer = await this.pdfGenerationService.generatePdf({ id: req.params.id, body: req.body })
+			const buffer = await this.pdfGenerationService.generatePdf({ id: req.params.id, body: req.body, user: req.user })
 
 			res.status(200).set('Content-Type', 'application/pdf').send(buffer)
 		} catch (error) {

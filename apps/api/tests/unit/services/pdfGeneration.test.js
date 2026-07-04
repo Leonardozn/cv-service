@@ -5,6 +5,7 @@ const PdfGenerationService = require('../../../src/services/pdfGeneration')
 
 const CURRICULUM_ID = '64b0c0ffee1234567890abcd'
 const TEMPLATE_ID = '64b0c0ffee1234567890abce'
+const OWNER = { id: 'user-1', role: 'user' }
 
 beforeEach(() => {
 	MockRepository.reset()
@@ -48,7 +49,7 @@ test('PdfGenerationService generatePdf() — renders a real PDF for a Curriculum
 	seedTemplate()
 	const service = PdfGenerationService.getInstance()
 
-	const buffer = await service.generatePdf({ id: CURRICULUM_ID, body: {} })
+	const buffer = await service.generatePdf({ id: CURRICULUM_ID, body: {}, user: OWNER })
 
 	assert.equal(Buffer.isBuffer(buffer), true)
 	assert.equal(buffer.subarray(0, 5).toString('latin1'), '%PDF-')
@@ -59,7 +60,7 @@ test('PdfGenerationService generatePdf() — renders with an explicitly requeste
 	seedTemplate({ active: false })
 	const service = PdfGenerationService.getInstance()
 
-	const buffer = await service.generatePdf({ id: CURRICULUM_ID, body: { template: TEMPLATE_ID } })
+	const buffer = await service.generatePdf({ id: CURRICULUM_ID, body: { template: TEMPLATE_ID }, user: OWNER })
 
 	assert.equal(buffer.subarray(0, 5).toString('latin1'), '%PDF-')
 })
@@ -69,7 +70,18 @@ test('PdfGenerationService generatePdf() — throws a NotFoundError when the Cur
 	const service = PdfGenerationService.getInstance()
 
 	await assert.rejects(
-		() => service.generatePdf({ id: CURRICULUM_ID, body: {} }),
+		() => service.generatePdf({ id: CURRICULUM_ID, body: {}, user: OWNER }),
+		{ name: 'NotFoundError', message: 'Curriculum not found.' }
+	)
+})
+
+test('PdfGenerationService generatePdf() — throws a NotFoundError when the Curriculum belongs to a different user (FR ownership)', async () => {
+	seedCurriculum({ user: 'user-1' })
+	seedTemplate()
+	const service = PdfGenerationService.getInstance()
+
+	await assert.rejects(
+		() => service.generatePdf({ id: CURRICULUM_ID, body: {}, user: { id: 'someone-else', role: 'user' } }),
 		{ name: 'NotFoundError', message: 'Curriculum not found.' }
 	)
 })
@@ -79,7 +91,7 @@ test('PdfGenerationService generatePdf() — throws when no Template is active a
 	const service = PdfGenerationService.getInstance()
 
 	await assert.rejects(
-		() => service.generatePdf({ id: CURRICULUM_ID, body: {} }),
+		() => service.generatePdf({ id: CURRICULUM_ID, body: {}, user: OWNER }),
 		{ message: 'No active Template is configured.' }
 	)
 })

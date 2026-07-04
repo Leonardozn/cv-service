@@ -36,11 +36,14 @@ class PdfGenerationService {
 
 	// Renders a Curriculum's PDF on-demand (never persisted): loads the Curriculum and its
 	// entries, resolves the requested (or default active) Template, and renders the buffer.
+	// `user` is the caller injected by the auth middleware (requireAuth) - required.
 	async generatePdf(config = {}) {
-		const { id, body = {} } = config
+		const { id, body = {}, user } = config
 
-		// Step 1: load the Curriculum (404 when no Curriculum exists with this id)
-		const curriculum = await this._findCurriculumOrFail(id)
+		// Step 1: load the Curriculum, confirming it belongs to the caller (404 either way, so a
+		// Curriculum that exists but belongs to someone else is indistinguishable from one that
+		// doesn't exist at all)
+		const curriculum = await this._findOwnedCurriculumOrFail(id, user)
 
 		// Step 2: load its Education/Experience/Certificate entries
 		const entries = await this.loadCurriculumEntries.execute({
@@ -66,12 +69,16 @@ class PdfGenerationService {
 	/**
 	 * @private
 	 */
-	async _findCurriculumOrFail(id) {
+	async _findOwnedCurriculumOrFail(id, user) {
+		let curriculum
 		try {
-			return await this.curriculumService.findOne({ id })
+			curriculum = await this.curriculumService.findOne({ id })
 		} catch {
 			throw new NotFoundError('Curriculum not found.')
 		}
+
+		if (curriculum.user !== user.id) throw new NotFoundError('Curriculum not found.')
+		return curriculum
 	}
 
 	/**
