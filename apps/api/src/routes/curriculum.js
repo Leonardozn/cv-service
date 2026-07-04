@@ -391,9 +391,11 @@ const CurriculumController = require('../controllers/curriculum')
  *     responses:
  *       200:
  *         description: |
- *           PDF generated. Sent with `Content-Disposition: inline; filename="curriculum.pdf"` so
- *           browsers open it directly instead of forcing a generic download, and so clients like
- *           Swagger UI show a named "Download file" link for this binary response.
+ *           PDF generated. Sent with `Content-Disposition: attachment; filename="curriculum.pdf"`
+ *           so it downloads with a proper filename - required as `attachment` (not `inline`) for
+ *           Swagger UI's response viewer specifically, which otherwise treats an unrecognized
+ *           binary content-type as text and corrupts it via `FileReader.readAsText()` before
+ *           offering a generic `response_<timestamp>.txt` download.
  *         content:
  *           application/pdf:
  *             schema: { type: string, format: binary }

@@ -128,7 +128,7 @@ class CurriculumController {
 
 			res.status(200)
 				.set('Content-Type', 'application/pdf')
-				.set('Content-Disposition', 'inline; filename="curriculum.pdf"')
+				.set('Content-Disposition', 'attachment; filename="curriculum.pdf"')
 				.send(buffer)
 		} catch (error) {
 			console.error(error)
