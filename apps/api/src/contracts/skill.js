@@ -12,6 +12,7 @@ class SkillContract {
 
 	getContract() {
 		return {
+			id: true,
 			name: true,
 			active: true,
 		}

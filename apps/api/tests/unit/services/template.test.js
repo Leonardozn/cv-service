@@ -31,7 +31,8 @@ test('template service add() — creates and returns the contract-filtered recor
 
 	const result = await service.add({ body: SAMPLE })
 
-	assert.deepEqual(result, SAMPLE)
+	assert.match(result.id, /^[0-9a-f]{24}$/)
+	assert.deepEqual(result, { ...SAMPLE, id: result.id })
 })
 
 test('template service findOne() — returns the contract-filtered record by id', async () => {
@@ -40,7 +41,7 @@ test('template service findOne() — returns the contract-filtered record by id'
 
 	const result = await service.findOne({ id: SEED_ID })
 
-	assert.deepEqual(result, SAMPLE)
+	assert.deepEqual(result, { ...SAMPLE, id: SEED_ID })
 })
 
 test('template service findOne() — throws when the record does not exist', async () => {
@@ -57,7 +58,7 @@ test('template service list() — returns count and contract-filtered records', 
 	const result = await service.list({})
 
 	assert.equal(result.count, 1)
-	assert.deepEqual(result.records, [SAMPLE])
+	assert.deepEqual(result.records, [{ ...SAMPLE, id: SEED_ID }])
 })
 
 test('template service update() — patches and returns the contract-filtered record', async () => {
@@ -66,7 +67,7 @@ test('template service update() — patches and returns the contract-filtered re
 
 	const result = await service.update({ id: SEED_ID, body: SAMPLE })
 
-	assert.deepEqual(result, SAMPLE)
+	assert.deepEqual(result, { ...SAMPLE, id: SEED_ID })
 })
 
 test('template service replace() — replaces and returns the contract-filtered record', async () => {
@@ -75,7 +76,7 @@ test('template service replace() — replaces and returns the contract-filtered 
 
 	const result = await service.replace({ id: SEED_ID, body: SAMPLE })
 
-	assert.deepEqual(result, SAMPLE)
+	assert.deepEqual(result, { ...SAMPLE, id: SEED_ID })
 })
 
 test('template service remove() — deletes the record', async () => {
