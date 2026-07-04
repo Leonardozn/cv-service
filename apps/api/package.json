@@ -1,0 +1,28 @@
+{
+  "name": "api",
+  "version": "1.0.0",
+  "main": "index.js",
+  "description": "",
+  "scripts": {
+    "start": "node .",
+    "test": "node --test \"tests/unit/**/*.test.js\" \"tests/e2e/**/*.test.js\" \"tests/smoke/**/*.test.js\" \"tests/crud/**/*.test.js\""
+  },
+  "dependencies": {
+    "@cv-service/server-configuration": "*",
+    "@cv-service/cors-policy": "*",
+    "@cv-service/request-logger": "*",
+    "@cv-service/env-variables": "*",
+    "@cv-service/prototypes": "*",
+    "@cv-service/handle-response": "*",
+    "@cv-service/handle-errors": "*",
+    "@cv-service/external-api-config": "*",
+    "@cv-service/data-encrypt": "*",
+    "@cv-service/documentation-config": "*",
+    "@cv-service/file-manager": "*",
+    "@cv-service/db-connections": "*",
+    "@cv-service/data-validator": "*",
+    "@cv-service/entity-queries": "*",
+    "@cv-service/pdf-generator": "*",
+    "@cv-service/auth-middleware": "*"
+  }
+}

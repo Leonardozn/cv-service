@@ -1,0 +1,10 @@
+{
+	"name": "@cv-service/entity-queries",
+	"version": "1.0.0",
+	"description": "Query constructor.",
+	"main": "index",
+	"dependencies": {
+		"@cv-service/handle-errors": "*",
+		"@cv-service/db-connections": "*"
+	}
+}
