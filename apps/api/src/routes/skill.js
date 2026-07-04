@@ -47,6 +47,10 @@ const SkillController = require('../controllers/skill')
  *     tags: [Skill]
  *     summary: List Skills
  *     description: |
+ *       Powers the skills autocomplete on the Curriculum form: call with `query[active]=true` to
+ *       get only the Skills offered as suggestions (the user can still type any free-text value -
+ *       Skill only suggests, it never restricts what `Curriculum.skills` can contain).
+ *
  *       Paginated list with filtering, operators, sorting and pagination.
  *         - Equality filter:  `query[field]=value`            (e.g. query[active]=true)
  *         - Operator filter:  `query[field][operator]=value`  (e.g. query[name][like]=node)

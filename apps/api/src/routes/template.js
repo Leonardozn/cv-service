@@ -51,6 +51,9 @@ const TemplateController = require('../controllers/template')
  *     tags: [Template]
  *     summary: List Templates
  *     description: |
+ *       Powers the design selector on the Curriculum form: call with `query[active]=true` to get
+ *       only the Templates the user is allowed to choose from.
+ *
  *       Paginated list with filtering, operators, sorting and pagination.
  *         - Equality filter:  `query[field]=value`            (e.g. query[active]=true)
  *         - Operator filter:  `query[field][operator]=value`  (e.g. query[name][like]=classic)
