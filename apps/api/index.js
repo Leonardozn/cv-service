@@ -79,11 +79,19 @@ middlewares.push({
 	methods: [authMiddleware.requireRole('admin')]
 })
 
-// Generating a Curriculum's PDF requires an authenticated user - the ownership check itself
-// (confirming the loaded Curriculum belongs to req.user) happens in PdfGenerationService, once
-// the Curriculum is loaded, so it can respond 404 (not 403) for someone else's Curriculum.
+// Curriculum/Education/Experience/Certificate (CRUD and generate-pdf, since '/curriculum' matches
+// its path too) require an authenticated user. Ownership scoping - a non-admin user limited to
+// their own data, an admin free of that restriction - happens in each model's own *Management
+// service (curriculumManagement.js, educationManagement.js, ...), once req.user is known, so it
+// can respond 404 (not 403) for someone else's data without confirming it exists.
+const authRequiredMethods = ['get', 'post', 'put', 'patch', 'delete']
 middlewares.push({
-	includeInPaths: [{ name: '/generate-pdf', method: 'post' }],
+	includeInPaths: [
+		...authRequiredMethods.map(method => ({ name: '/curriculum', method })),
+		...authRequiredMethods.map(method => ({ name: '/education', method })),
+		...authRequiredMethods.map(method => ({ name: '/experience', method })),
+		...authRequiredMethods.map(method => ({ name: '/certificate', method }))
+	],
 	methods: [authMiddleware.requireAuth()]
 })
 

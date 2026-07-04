@@ -1,4 +1,4 @@
-const ExperienceService = require('../services/experience')
+const ExperienceManagementService = require('../services/experienceManagement')
 const HandleResponseHandler = require('../handlers/handleResponse')
 
 class ExperienceController {
@@ -13,16 +13,11 @@ class ExperienceController {
 	 */
 	handleResponseHandler
 
-	/**
-	 * @private
-	 */
-	experienceService
-
 	constructor() {
 		this.handleResponseHandler = HandleResponseHandler.getInstance()
 		this.responseBody = this.handleResponseHandler.getResponseBody()
 
-		this.experienceService = ExperienceService.getInstance()
+		this.experienceManagementService = ExperienceManagementService.getInstance()
 
 		this.add = this.add.bind(this)
 		this.findOne = this.findOne.bind(this)
@@ -39,84 +34,84 @@ class ExperienceController {
 
 	async add(req, res) {
 		try {
-			const experience = await this.experienceService.add({ body: req.body, files: req.files })
+			const experience = await this.experienceManagementService.add({ body: req.body, files: req.files, user: req.user })
 			const response = this.handleResponseHandler.buildResponse(experience)
-	
+
 			res.status(response[this.responseBody.STATUS]).json(response)
 		} catch (error) {
 			console.error(error)
 			const response = this.handleResponseHandler.buildResponse(error)
-	
+
 			res.status(response[this.responseBody.STATUS]).json(response)
 		}
 	}
-	
+
 	async findOne(req, res) {
 		try {
-			const experience = await this.experienceService.findOne({ id: req.params.id, query: req.query })
+			const experience = await this.experienceManagementService.findOne({ id: req.params.id, user: req.user })
 			const response = this.handleResponseHandler.buildResponse(experience)
-	
+
 			res.status(response[this.responseBody.STATUS]).json(response)
 		} catch (error) {
 			console.error(error)
 			const response = this.handleResponseHandler.buildResponse(error)
-			
+
 			res.status(response[this.responseBody.STATUS]).json(response)
 		}
 	}
-	
+
 	async list(req, res) {
 		try {
-			const experience_list = await this.experienceService.list({ query: req.query })
+			const experience_list = await this.experienceManagementService.list({ query: req.query, user: req.user })
 			const response = this.handleResponseHandler.buildResponse(experience_list)
-	
+
 			res.status(response[this.responseBody.STATUS]).json(response)
 		} catch (error) {
 			console.error(error)
 			const response = this.handleResponseHandler.buildResponse(error)
-	
+
 			res.status(response[this.responseBody.STATUS]).json(response)
 		}
 	}
-	
+
 	async update(req, res) {
 		try {
-			const experience = await this.experienceService.update({ body: req.body, id: req.params.id, files: req.files })
+			const experience = await this.experienceManagementService.update({ body: req.body, id: req.params.id, files: req.files, user: req.user })
 			const response = this.handleResponseHandler.buildResponse(experience)
-	
+
 			res.status(response[this.responseBody.STATUS]).json(response)
 		} catch (error) {
 			console.error(error)
 			const response = this.handleResponseHandler.buildResponse(error)
-	
+
 			res.status(response[this.responseBody.STATUS]).json(response)
 		}
 	}
 
 	async replace(req, res) {
 		try {
-			const experience = await this.experienceService.replace({ body: req.body, id: req.params.id, files: req.files })
+			const experience = await this.experienceManagementService.replace({ body: req.body, id: req.params.id, files: req.files, user: req.user })
 			const response = this.handleResponseHandler.buildResponse(experience)
-	
+
 			res.status(response[this.responseBody.STATUS]).json(response)
 		} catch (error) {
 			console.error(error)
 			const response = this.handleResponseHandler.buildResponse(error)
-	
+
 			res.status(response[this.responseBody.STATUS]).json(response)
 		}
 	}
-	
+
 	async remove(req, res) {
 		try {
-			const experience = await this.experienceService.remove({ id: req.params.id })
+			const experience = await this.experienceManagementService.remove({ id: req.params.id, user: req.user })
 			const response = this.handleResponseHandler.buildResponse(experience)
-	
+
 			res.status(response[this.responseBody.STATUS]).json(response)
 		} catch (error) {
 			console.error(error)
 			const response = this.handleResponseHandler.buildResponse(error)
-	
+
 			res.status(response[this.responseBody.STATUS]).json(response)
 		}
 	}

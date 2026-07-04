@@ -6,9 +6,9 @@ const CertificateService = require('./certificate')
 const TemplateService = require('./template')
 const PdfGeneratorHandler = require('../handlers/pdfGenerator')
 const envVariables = require('../handlers/envVariables')
-const { NotFoundError } = require('../handlers/handleErrors')
 const LoadCurriculumEntries = require('./commands/loadCurriculumEntries')
 const ResolveTemplate = require('./commands/resolveTemplate')
+const AssertCurriculumAccess = require('./commands/assertCurriculumAccess')
 
 class PdfGenerationService {
 	/**
@@ -27,6 +27,7 @@ class PdfGenerationService {
 
 		this.loadCurriculumEntries = LoadCurriculumEntries.getInstance()
 		this.resolveTemplate = ResolveTemplate.getInstance()
+		this.assertCurriculumAccess = AssertCurriculumAccess.getInstance()
 	}
 
 	static getInstance() {
@@ -40,10 +41,10 @@ class PdfGenerationService {
 	async generatePdf(config = {}) {
 		const { id, body = {}, user } = config
 
-		// Step 1: load the Curriculum, confirming it belongs to the caller (404 either way, so a
-		// Curriculum that exists but belongs to someone else is indistinguishable from one that
-		// doesn't exist at all)
-		const curriculum = await this._findOwnedCurriculumOrFail(id, user)
+		// Step 1: load the Curriculum, confirming it belongs to the caller unless they're admin
+		// (404 either way for a non-admin, so a Curriculum that exists but belongs to someone else
+		// is indistinguishable from one that doesn't exist at all)
+		const curriculum = await this.assertCurriculumAccess.execute({ curriculumService: this.curriculumService, curriculumId: id, user })
 
 		// Step 2: load its Education/Experience/Certificate entries
 		const entries = await this.loadCurriculumEntries.execute({
@@ -64,21 +65,6 @@ class PdfGenerationService {
 			curriculum: { ...curriculum, ...entries, photo: this._resolvePhotoPath(curriculum.photo) },
 			templateKey: template.key
 		})
-	}
-
-	/**
-	 * @private
-	 */
-	async _findOwnedCurriculumOrFail(id, user) {
-		let curriculum
-		try {
-			curriculum = await this.curriculumService.findOne({ id })
-		} catch {
-			throw new NotFoundError('Curriculum not found.')
-		}
-
-		if (curriculum.user !== user.id) throw new NotFoundError('Curriculum not found.')
-		return curriculum
 	}
 
 	/**

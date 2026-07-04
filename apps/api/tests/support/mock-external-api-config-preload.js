@@ -16,7 +16,9 @@ const Module = require('node:module')
 
 const FIXED_USERS_BY_TOKEN = {
 	'admin-token': { id: 'fixture-admin', role: 'admin' },
-	'user-token': { id: 'fixture-user', role: 'user' }
+	'user-token': { id: 'fixture-user', role: 'user' },
+	'other-user-token': { id: 'fixture-other-user', role: 'user' },
+	'third-user-token': { id: 'fixture-third-user', role: 'user' }
 }
 
 class MockAxiosInstance {

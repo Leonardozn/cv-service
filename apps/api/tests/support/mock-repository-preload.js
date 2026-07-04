@@ -9,8 +9,10 @@
 //
 // Adapted from easy-node's own tests/backend/javascript/support/mock-repository-preload.js —
 // the one difference is MOCK_SEED_RECORD, which lets each model's test seed a complete record
-// matching that model's own fields instead of a hardcoded shape.
-
+// matching that model's own fields instead of a hardcoded shape. MOCK_SEED_EXTRA (JSON array of
+// {schema, id, record}) additionally seeds records in other collections - used to seed a parent
+// Curriculum alongside a child Education/Experience/Certificate record, since the ownership check
+// added by the auth gap-closing work now requires the parent to actually exist.
 const Module = require('node:module')
 const crypto = require('node:crypto')
 const fs = require('node:fs')
@@ -18,6 +20,7 @@ const fs = require('node:fs')
 const SEED_ID = process.env.MOCK_SEED_ID || ''
 const SEED_SCHEMA = process.env.MOCK_SEED_SCHEMA || ''
 const SEED_RECORD = process.env.MOCK_SEED_RECORD || ''
+const SEED_EXTRA = process.env.MOCK_SEED_EXTRA || ''
 const CAPTURE_FILE = process.env.MOCK_CAPTURE_FILE || ''
 
 function objectId() {
@@ -96,6 +99,13 @@ class MockRepository {
 			const now = new Date().toISOString()
 			const record = JSON.parse(SEED_RECORD)
 			this._collection(SEED_SCHEMA).set(SEED_ID, { _id: SEED_ID, ...record, createdAt: now, updatedAt: now })
+		}
+
+		if (SEED_EXTRA) {
+			const now = new Date().toISOString()
+			for (const { schema, id, record } of JSON.parse(SEED_EXTRA)) {
+				this._collection(schema).set(id, { _id: id, ...record, createdAt: now, updatedAt: now })
+			}
 		}
 	}
 
