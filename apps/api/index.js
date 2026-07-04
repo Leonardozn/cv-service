@@ -66,10 +66,10 @@ if (uploadPaths.length > 0) {
 	})
 }
 
-// Catalog write access is admin-only (read stays public - see routes/skill.js, routes/template.js).
-// A new Skill's automatic registration when a CV is saved goes through SkillService.add()
-// in-process (services/commands/registerNewSkills.js), never through this HTTP route, so it's
-// unaffected by this gate.
+// Catalog write access is admin-only (read requires only an authenticated user, any role - see
+// routes/skill.js, routes/template.js). A new Skill's automatic registration when a CV is saved
+// goes through SkillService.add() in-process (services/commands/registerNewSkills.js), never
+// through this HTTP route, so it's unaffected by this gate.
 const adminWriteMethods = ['post', 'put', 'patch', 'delete']
 middlewares.push({
 	includeInPaths: [
@@ -77,6 +77,15 @@ middlewares.push({
 		...adminWriteMethods.map(method => ({ name: '/template', method }))
 	],
 	methods: [authMiddleware.requireRole('admin')]
+})
+
+const catalogReadMethods = ['get']
+middlewares.push({
+	includeInPaths: [
+		...catalogReadMethods.map(method => ({ name: '/skill', method })),
+		...catalogReadMethods.map(method => ({ name: '/template', method }))
+	],
+	methods: [authMiddleware.requireAuth()]
 })
 
 // Curriculum/Education/Experience/Certificate (CRUD and generate-pdf, since '/curriculum' matches

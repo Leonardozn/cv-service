@@ -48,7 +48,7 @@ test('skill list — count reflects every created record', async () => {
 	try {
 		for (const record of RECORDS) await app.request('POST', `${app.path}/skill`, record, ADMIN_AUTH)
 
-		const res = await app.request('GET', `${app.path}/skill`)
+		const res = await app.request('GET', `${app.path}/skill`, undefined, ADMIN_AUTH)
 
 		assert.equal(res.status, 200)
 		assert.equal(res.body.content.count, RECORDS.length)
@@ -63,7 +63,7 @@ test('skill list — pagination slices the result set', async () => {
 	try {
 		for (const record of RECORDS) await app.request('POST', `${app.path}/skill`, record, ADMIN_AUTH)
 
-		const res = await app.request('GET', `${app.path}/skill?size=2&page=1`)
+		const res = await app.request('GET', `${app.path}/skill?size=2&page=1`, undefined, ADMIN_AUTH)
 
 		assert.equal(res.status, 200)
 		assert.equal(res.body.content.count, RECORDS.length)
@@ -79,7 +79,7 @@ test('skill list — equality filter on name (FR-G8)', async () => {
 	try {
 		for (const record of RECORDS) await app.request('POST', `${app.path}/skill`, record, ADMIN_AUTH)
 
-		const res = await app.request('GET', `${app.path}/skill?query[name]=${RECORDS[1].name}`)
+		const res = await app.request('GET', `${app.path}/skill?query[name]=${RECORDS[1].name}`, undefined, ADMIN_AUTH)
 
 		assert.equal(res.status, 200)
 		assert.equal(res.body.content.count, 1)
@@ -95,7 +95,7 @@ test('skill list — sort by name (FR-G8)', async () => {
 	try {
 		for (const record of RECORDS) await app.request('POST', `${app.path}/skill`, record, ADMIN_AUTH)
 
-		const res = await app.request('GET', `${app.path}/skill?sort[name]=-1`)
+		const res = await app.request('GET', `${app.path}/skill?sort[name]=-1`, undefined, ADMIN_AUTH)
 
 		assert.equal(res.status, 200)
 		const values = res.body.content.records.map(r => r.name)
@@ -113,7 +113,7 @@ test('skill list — query[active]=true returns only the active Skills offered a
 		await app.request('POST', `${app.path}/skill`, { name: 'MongoDB', active: true }, ADMIN_AUTH)
 		await app.request('POST', `${app.path}/skill`, { name: 'COBOL', active: false }, ADMIN_AUTH)
 
-		const res = await app.request('GET', `${app.path}/skill?query[active]=true`)
+		const res = await app.request('GET', `${app.path}/skill?query[active]=true`, undefined, ADMIN_AUTH)
 
 		assert.equal(res.status, 200)
 		assert.equal(res.body.content.count, 2)

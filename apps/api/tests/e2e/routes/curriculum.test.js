@@ -371,7 +371,7 @@ test('curriculum routes — POST /curriculum registers any new skill in the Skil
 	try {
 		await app.request('POST', `${app.path}/curriculum`, { ...SAMPLE, skills: ['Node.js', 'MongoDB'] }, OWNER_AUTH)
 
-		const skills = await app.request('GET', `${app.path}/skill`)
+		const skills = await app.request('GET', `${app.path}/skill`, undefined, OWNER_AUTH)
 		assert.equal(skills.body.content.count, 2)
 		assert.deepEqual(skills.body.content.records.map(skill => skill.name).sort(), ['MongoDB', 'Node.js'])
 		assert.ok(skills.body.content.records.every(skill => skill.active === true))

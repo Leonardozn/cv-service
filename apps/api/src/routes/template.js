@@ -5,9 +5,10 @@ const TemplateController = require('../controllers/template')
  * tags:
  *   - name: Template
  *     description: |
- *       Catalog of CV layout designs, selected by the user when generating the PDF. Reading is
- *       public; writing (create/update/delete) requires the admin role
- *       (`Authorization: Bearer <token>` resolving to `role: "admin"` — see auth-middleware).
+ *       Catalog of CV layout designs, selected by the user when generating the PDF. Every route
+ *       requires an authenticated user (`Authorization: Bearer <token>`); reading (list/get by
+ *       id) only needs any valid session (either role), while writing (create/update/delete)
+ *       requires the admin role specifically.
  *
  * /template:
  *   post:
@@ -59,13 +60,16 @@ const TemplateController = require('../controllers/template')
  *     summary: List Templates
  *     description: |
  *       Powers the design selector on the Curriculum form: call with `query[active]=true` to get
- *       only the Templates the user is allowed to choose from.
+ *       only the Templates the user is allowed to choose from. Any authenticated user may call
+ *       this, regardless of role.
  *
  *       Paginated list with filtering, operators, sorting and pagination.
  *         - Equality filter:  `query[field]=value`            (e.g. query[active]=true)
  *         - Operator filter:  `query[field][operator]=value`  (e.g. query[name][like]=classic)
  *       Operators by type — name/key/description (string): eq, ne, like, notLike, in, notIn, or;
  *       active (boolean): eq, ne, in, notIn, or.
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: query
  *         name: query[field]
@@ -108,6 +112,9 @@ const TemplateController = require('../controllers/template')
  *               message: "Unrecognized key(s) in object: 'gte'"
  *               statusCode: 400
  *               content: { code: "unrecognized_keys", keys: ["gte"], path: ["name"], message: "Unrecognized key(s) in object: 'gte'" }
+ *       401:
+ *         description: Missing/malformed Authorization header, or an invalid/expired session
+ *         content: { application/json: { example: { success: false, message: "Missing or malformed Authorization header.", statusCode: 401, content: null } } }
  *       500:
  *         description: Unexpected server error
  *         content: { application/json: { example: { success: false, message: "An error occurred", statusCode: 500, content: null } } }
@@ -116,6 +123,9 @@ const TemplateController = require('../controllers/template')
  *   get:
  *     tags: [Template]
  *     summary: Get a Template by id
+ *     description: Any authenticated user may call this, regardless of role.
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -126,6 +136,9 @@ const TemplateController = require('../controllers/template')
  *       200:
  *         description: Template found
  *         content: { application/json: { example: { success: true, message: "Success!", statusCode: 200, content: { id: "665f...", name: "Classic two columns", key: "classic-two-columns", description: "Two-column layout with a sidebar", active: true } } } }
+ *       401:
+ *         description: Missing/malformed Authorization header, or an invalid/expired session
+ *         content: { application/json: { example: { success: false, message: "Missing or malformed Authorization header.", statusCode: 401, content: null } } }
  *       400:
  *         description: No Template matches the given id (generated findOne raises BadRequestError; observed against the running app)
  *         content: { application/json: { example: { success: false, message: "Template not found.", statusCode: 400, content: null } } }
