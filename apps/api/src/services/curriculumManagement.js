@@ -3,6 +3,7 @@ const SkillService = require('./skill')
 const DbConnectionHandler = require('../handlers/dbConnections')
 const UpsertCurriculum = require('./commands/upsertCurriculum')
 const RegisterNewSkills = require('./commands/registerNewSkills')
+const AssertCurriculumAccess = require('./commands/assertCurriculumAccess')
 
 class CurriculumManagementService {
 	/**
@@ -18,6 +19,7 @@ class CurriculumManagementService {
 
 		this.upsertCurriculum = UpsertCurriculum.getInstance()
 		this.registerNewSkills = RegisterNewSkills.getInstance()
+		this.assertCurriculumAccess = AssertCurriculumAccess.getInstance()
 	}
 
 	static getInstance() {
@@ -40,10 +42,11 @@ class CurriculumManagementService {
 		})
 	}
 
-	// PATCH /curriculum/:id: updates the given Curriculum, then auto-registers any new skill
-	// named in the submitted list (same catalog rule as save()).
+	// PATCH /curriculum/:id: confirms the Curriculum belongs to the caller (unless admin), updates
+	// it, then auto-registers any new skill named in the submitted list (same catalog rule as save()).
 	async saveEntry(config = {}) {
-		const { id, body = {}, files = [] } = config
+		const { id, body = {}, files = [], user } = config
+		await this.assertCurriculumAccess.execute({ curriculumService: this.curriculumService, curriculumId: id, user })
 
 		return await this._withTransaction(async (session) => {
 			// Step 1: update the Curriculum
@@ -53,6 +56,36 @@ class CurriculumManagementService {
 
 			return curriculum
 		})
+	}
+
+	// GET /curriculum/:id: an admin may read any Curriculum; a non-admin user only their own.
+	async findOne(config = {}) {
+		const { id, user } = config
+		return await this.assertCurriculumAccess.execute({ curriculumService: this.curriculumService, curriculumId: id, user })
+	}
+
+	// GET /curriculum: an admin sees every Curriculum; a non-admin user only their own (at most
+	// one, per the unique `user` field) - any client-supplied `user` filter is overridden.
+	async list(config = {}) {
+		const { user, query = {} } = config
+		if (user.role === 'admin') return await this.curriculumService.list({ query })
+
+		const scopedQuery = { ...query, query: { ...(query.query || {}), user: user.id } }
+		return await this.curriculumService.list({ query: scopedQuery })
+	}
+
+	// PUT /curriculum/:id: confirms the Curriculum belongs to the caller (unless admin), then replaces it.
+	async replaceEntry(config = {}) {
+		const { id, body = {}, files = [], user } = config
+		await this.assertCurriculumAccess.execute({ curriculumService: this.curriculumService, curriculumId: id, user })
+		return await this.curriculumService.replace({ id, body, files })
+	}
+
+	// DELETE /curriculum/:id: confirms the Curriculum belongs to the caller (unless admin), then removes it.
+	async removeEntry(config = {}) {
+		const { id, user } = config
+		await this.assertCurriculumAccess.execute({ curriculumService: this.curriculumService, curriculumId: id, user })
+		return await this.curriculumService.remove({ id })
 	}
 
 	/**

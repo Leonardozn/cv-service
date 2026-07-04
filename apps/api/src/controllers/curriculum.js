@@ -1,4 +1,3 @@
-const CurriculumService = require('../services/curriculum')
 const CurriculumManagementService = require('../services/curriculumManagement')
 const PdfGenerationService = require('../services/pdfGeneration')
 const HandleResponseHandler = require('../handlers/handleResponse')
@@ -15,16 +14,10 @@ class CurriculumController {
 	 */
 	handleResponseHandler
 
-	/**
-	 * @private
-	 */
-	curriculumService
-
 	constructor() {
 		this.handleResponseHandler = HandleResponseHandler.getInstance()
 		this.responseBody = this.handleResponseHandler.getResponseBody()
 
-		this.curriculumService = CurriculumService.getInstance()
 		this.curriculumManagementService = CurriculumManagementService.getInstance()
 		this.pdfGenerationService = PdfGenerationService.getInstance()
 
@@ -44,77 +37,80 @@ class CurriculumController {
 
 	async add(req, res) {
 		try {
-			const curriculum = await this.curriculumManagementService.save({ body: req.body, files: req.files })
+			// The Curriculum being saved is always the caller's own - never trust a client-supplied
+			// `user`, always use the one the auth middleware resolved.
+			const body = { ...req.body, user: req.user.id }
+			const curriculum = await this.curriculumManagementService.save({ body, files: req.files })
 			const response = this.handleResponseHandler.buildResponse(curriculum)
-	
+
 			res.status(response[this.responseBody.STATUS]).json(response)
 		} catch (error) {
 			console.error(error)
 			const response = this.handleResponseHandler.buildResponse(error)
-	
+
 			res.status(response[this.responseBody.STATUS]).json(response)
 		}
 	}
-	
+
 	async findOne(req, res) {
 		try {
-			const curriculum = await this.curriculumService.findOne({ id: req.params.id, query: req.query })
+			const curriculum = await this.curriculumManagementService.findOne({ id: req.params.id, user: req.user })
 			const response = this.handleResponseHandler.buildResponse(curriculum)
-	
+
 			res.status(response[this.responseBody.STATUS]).json(response)
 		} catch (error) {
 			console.error(error)
 			const response = this.handleResponseHandler.buildResponse(error)
-			
+
 			res.status(response[this.responseBody.STATUS]).json(response)
 		}
 	}
-	
+
 	async list(req, res) {
 		try {
-			const curriculum_list = await this.curriculumService.list({ query: req.query })
+			const curriculum_list = await this.curriculumManagementService.list({ query: req.query, user: req.user })
 			const response = this.handleResponseHandler.buildResponse(curriculum_list)
-	
+
 			res.status(response[this.responseBody.STATUS]).json(response)
 		} catch (error) {
 			console.error(error)
 			const response = this.handleResponseHandler.buildResponse(error)
-	
+
 			res.status(response[this.responseBody.STATUS]).json(response)
 		}
 	}
-	
+
 	async update(req, res) {
 		try {
-			const curriculum = await this.curriculumManagementService.saveEntry({ body: req.body, id: req.params.id, files: req.files })
+			const curriculum = await this.curriculumManagementService.saveEntry({ body: req.body, id: req.params.id, files: req.files, user: req.user })
 			const response = this.handleResponseHandler.buildResponse(curriculum)
-	
+
 			res.status(response[this.responseBody.STATUS]).json(response)
 		} catch (error) {
 			console.error(error)
 			const response = this.handleResponseHandler.buildResponse(error)
-	
+
 			res.status(response[this.responseBody.STATUS]).json(response)
 		}
 	}
 
 	async replace(req, res) {
 		try {
-			const curriculum = await this.curriculumService.replace({ body: req.body, id: req.params.id, files: req.files })
+			const curriculum = await this.curriculumManagementService.replaceEntry({ body: req.body, id: req.params.id, files: req.files, user: req.user })
 			const response = this.handleResponseHandler.buildResponse(curriculum)
-	
+
 			res.status(response[this.responseBody.STATUS]).json(response)
 		} catch (error) {
 			console.error(error)
 			const response = this.handleResponseHandler.buildResponse(error)
-	
+
 			res.status(response[this.responseBody.STATUS]).json(response)
 		}
 	}
-	
+
 	async remove(req, res) {
 		try {
-			const curriculum = await this.curriculumService.remove({ id: req.params.id })
+			const curriculum = await this.curriculumManagementService.removeEntry({ id: req.params.id, user: req.user })
 			const response = this.handleResponseHandler.buildResponse(curriculum)
 
 			res.status(response[this.responseBody.STATUS]).json(response)

@@ -86,6 +86,16 @@ test('PdfGenerationService generatePdf() — throws a NotFoundError when the Cur
 	)
 })
 
+test('PdfGenerationService generatePdf() — an admin can render a PDF for a Curriculum owned by someone else (FR admin override)', async () => {
+	seedCurriculum({ user: 'user-1' })
+	seedTemplate()
+	const service = PdfGenerationService.getInstance()
+
+	const buffer = await service.generatePdf({ id: CURRICULUM_ID, body: {}, user: { id: 'admin-1', role: 'admin' } })
+
+	assert.equal(buffer.subarray(0, 5).toString('latin1'), '%PDF-')
+})
+
 test('PdfGenerationService generatePdf() — throws when no Template is active and none was requested', async () => {
 	seedCurriculum()
 	const service = PdfGenerationService.getInstance()
