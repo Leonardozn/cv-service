@@ -1,4 +1,5 @@
 const CurriculumService = require('../services/curriculum')
+const PdfGenerationService = require('../services/pdfGeneration')
 const HandleResponseHandler = require('../handlers/handleResponse')
 
 class CurriculumController {
@@ -23,6 +24,7 @@ class CurriculumController {
 		this.responseBody = this.handleResponseHandler.getResponseBody()
 
 		this.curriculumService = CurriculumService.getInstance()
+		this.pdfGenerationService = PdfGenerationService.getInstance()
 
 		this.add = this.add.bind(this)
 		this.findOne = this.findOne.bind(this)
@@ -30,6 +32,7 @@ class CurriculumController {
 		this.update = this.update.bind(this)
 		this.replace = this.replace.bind(this)
 		this.remove = this.remove.bind(this)
+		this.generatePdf = this.generatePdf.bind(this)
 	}
 
 	static getInstance() {
@@ -111,12 +114,25 @@ class CurriculumController {
 		try {
 			const curriculum = await this.curriculumService.remove({ id: req.params.id })
 			const response = this.handleResponseHandler.buildResponse(curriculum)
-	
+
 			res.status(response[this.responseBody.STATUS]).json(response)
 		} catch (error) {
 			console.error(error)
 			const response = this.handleResponseHandler.buildResponse(error)
-	
+
+			res.status(response[this.responseBody.STATUS]).json(response)
+		}
+	}
+
+	async generatePdf(req, res) {
+		try {
+			const buffer = await this.pdfGenerationService.generatePdf({ id: req.params.id, body: req.body })
+
+			res.status(200).set('Content-Type', 'application/pdf').send(buffer)
+		} catch (error) {
+			console.error(error)
+			const response = this.handleResponseHandler.buildResponse(error)
+
 			res.status(response[this.responseBody.STATUS]).json(response)
 		}
 	}

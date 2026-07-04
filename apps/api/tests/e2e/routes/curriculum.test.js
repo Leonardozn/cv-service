@@ -125,3 +125,46 @@ test('curriculum routes — DELETE removes the seeded record', async () => {
 		await app.stop()
 	}
 })
+
+test('curriculum routes — POST :id/generate-pdf returns 404 when the Curriculum does not exist', async () => {
+	const app = await runApp()
+
+	try {
+		const res = await app.request('POST', `${app.path}/curriculum/${SEED_ID}/generate-pdf`)
+
+		assert.equal(res.status, 404)
+		assert.equal(res.body.success, false)
+	} finally {
+		await app.stop()
+	}
+})
+
+test('curriculum routes — POST :id/generate-pdf returns 400 when no Template is active', async () => {
+	const app = await runApp(seededEnv())
+
+	try {
+		const res = await app.request('POST', `${app.path}/curriculum/${SEED_ID}/generate-pdf`)
+
+		assert.equal(res.status, 400)
+		assert.equal(res.body.message, 'No active Template is configured.')
+	} finally {
+		await app.stop()
+	}
+})
+
+test('curriculum routes — POST :id/generate-pdf renders a real PDF binary using the active default Template', async () => {
+	const app = await runApp(seededEnv())
+
+	try {
+		await app.request('POST', `${app.path}/template`, { name: 'Classic two columns', key: 'classic-two-columns', description: 'Two-column layout', active: true })
+
+		const res = await fetch(`${app.baseUrl}${app.path}/curriculum/${SEED_ID}/generate-pdf`, { method: 'POST' })
+		const buffer = Buffer.from(await res.arrayBuffer())
+
+		assert.equal(res.status, 200)
+		assert.equal(res.headers.get('content-type'), 'application/pdf')
+		assert.equal(buffer.subarray(0, 5).toString('latin1'), '%PDF-')
+	} finally {
+		await app.stop()
+	}
+})
