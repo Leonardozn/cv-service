@@ -6,14 +6,15 @@ const TemplateController = require('../controllers/template')
  *   - name: Template
  *     description: |
  *       Catalog of CV layout designs, selected by the user when generating the PDF. Reading is
- *       public; per the Catalog contract, writing (create/update/delete) will be restricted to
- *       admin (`requireRole('admin')`) once the auth middleware is wired in (task 4) — these
- *       routes are open for now.
+ *       public; writing (create/update/delete) requires the admin role
+ *       (`Authorization: Bearer <token>` resolving to `role: "admin"` — see auth-middleware).
  *
  * /template:
  *   post:
  *     tags: [Template]
- *     summary: Create a Template
+ *     summary: Create a Template (admin only)
+ *     security:
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -44,6 +45,12 @@ const TemplateController = require('../controllers/template')
  *               content:
  *                 - { code: invalid_type, expected: string, received: undefined, path: [key], message: Required }
  *                 - { code: invalid_type, expected: boolean, received: undefined, path: [active], message: Required }
+ *       401:
+ *         description: Missing/malformed Authorization header, or an invalid/expired session (observed against the running app)
+ *         content: { application/json: { example: { success: false, message: "Missing or malformed Authorization header.", statusCode: 401, content: null } } }
+ *       403:
+ *         description: The authenticated user is not admin (observed against the running app)
+ *         content: { application/json: { example: { success: false, message: "This action requires the 'admin' role.", statusCode: 403, content: null } } }
  *       500:
  *         description: Unexpected server error
  *         content: { application/json: { example: { success: false, message: "An error occurred", statusCode: 500, content: null } } }
@@ -130,7 +137,9 @@ const TemplateController = require('../controllers/template')
  *         content: { application/json: { example: { success: false, message: "An unexpected error occurred. Please try again later.", statusCode: 500, content: null } } }
  *   put:
  *     tags: [Template]
- *     summary: Replace a Template
+ *     summary: Replace a Template (admin only)
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -155,12 +164,20 @@ const TemplateController = require('../controllers/template')
  *       400:
  *         description: Validation error, or no Template matches the given id
  *         content: { application/json: { example: { success: false, message: "Template not found.", statusCode: 400, content: null } } }
+ *       401:
+ *         description: Missing/malformed Authorization header, or an invalid/expired session
+ *         content: { application/json: { example: { success: false, message: "Missing or malformed Authorization header.", statusCode: 401, content: null } } }
+ *       403:
+ *         description: The authenticated user is not admin
+ *         content: { application/json: { example: { success: false, message: "This action requires the 'admin' role.", statusCode: 403, content: null } } }
  *       500:
  *         description: Unexpected server error
  *         content: { application/json: { example: { success: false, message: "An error occurred", statusCode: 500, content: null } } }
  *   patch:
  *     tags: [Template]
- *     summary: Update a Template
+ *     summary: Update a Template (admin only)
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -184,12 +201,20 @@ const TemplateController = require('../controllers/template')
  *       400:
  *         description: Validation error, or no Template matches the given id
  *         content: { application/json: { example: { success: false, message: "Template not found.", statusCode: 400, content: null } } }
+ *       401:
+ *         description: Missing/malformed Authorization header, or an invalid/expired session
+ *         content: { application/json: { example: { success: false, message: "Missing or malformed Authorization header.", statusCode: 401, content: null } } }
+ *       403:
+ *         description: The authenticated user is not admin
+ *         content: { application/json: { example: { success: false, message: "This action requires the 'admin' role.", statusCode: 403, content: null } } }
  *       500:
  *         description: Unexpected server error
  *         content: { application/json: { example: { success: false, message: "An error occurred", statusCode: 500, content: null } } }
  *   delete:
  *     tags: [Template]
- *     summary: Delete a Template
+ *     summary: Delete a Template (admin only)
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -203,6 +228,12 @@ const TemplateController = require('../controllers/template')
  *       400:
  *         description: No Template matches the given id
  *         content: { application/json: { example: { success: false, message: "Template not found.", statusCode: 400, content: null } } }
+ *       401:
+ *         description: Missing/malformed Authorization header, or an invalid/expired session (observed against the running app)
+ *         content: { application/json: { example: { success: false, message: "Missing or malformed Authorization header.", statusCode: 401, content: null } } }
+ *       403:
+ *         description: The authenticated user is not admin (observed against the running app)
+ *         content: { application/json: { example: { success: false, message: "This action requires the 'admin' role.", statusCode: 403, content: null } } }
  *       500:
  *         description: Unexpected server error
  *         content: { application/json: { example: { success: false, message: "An error occurred", statusCode: 500, content: null } } }

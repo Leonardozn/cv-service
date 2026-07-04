@@ -1,8 +1,10 @@
 'use strict'
 
 // Shared test helper: boots this app as a real subprocess (DB mocked via
-// mock-repository-preload.js, and the raw connection handler used for transactions mocked via
-// mock-db-connections-preload.js - see data-transactions-multi-write), waits for it to come up,
+// mock-repository-preload.js, the raw connection handler used for transactions mocked via
+// mock-db-connections-preload.js - see data-transactions-multi-write, and the auth-service HTTP
+// call mocked via mock-external-api-config-preload.js - see auth-middleware's fixed-token
+// fallback for the 'admin-token'/'user-token' fixtures a test can send), waits for it to come up,
 // and returns request/stop helpers. Used by smoke/e2e/crud tests - never required by unit tests,
 // which exercise the service in-process instead.
 
@@ -13,6 +15,7 @@ const path = require('node:path')
 const APP_ROOT = path.join(__dirname, '..', '..')
 const PRELOAD = path.join(__dirname, 'mock-repository-preload.js')
 const DB_CONNECTIONS_PRELOAD = path.join(__dirname, 'mock-db-connections-preload.js')
+const EXTERNAL_API_CONFIG_PRELOAD = path.join(__dirname, 'mock-external-api-config-preload.js')
 
 function getFreePort() {
 	return new Promise((resolve, reject) => {
@@ -56,7 +59,7 @@ async function runApp(extraEnv = {}) {
 	const appPath = env.API_PATH || ''
 	const baseUrl = `http://localhost:${port}`
 
-	const child = spawn(process.execPath, ['--require', PRELOAD, '--require', DB_CONNECTIONS_PRELOAD, 'index.js'], {
+	const child = spawn(process.execPath, ['--require', PRELOAD, '--require', DB_CONNECTIONS_PRELOAD, '--require', EXTERNAL_API_CONFIG_PRELOAD, 'index.js'], {
 		cwd: APP_ROOT,
 		env,
 		stdio: 'pipe'
@@ -77,10 +80,11 @@ ${stderr}`)
 	return {
 		baseUrl,
 		path: appPath,
-		async request(method, url, body) {
+		async request(method, url, body, extraHeaders = {}) {
+			const headers = { ...(body !== undefined ? { 'Content-Type': 'application/json' } : {}), ...extraHeaders }
 			const res = await fetch(`${baseUrl}${url}`, {
 				method,
-				headers: body !== undefined ? { 'Content-Type': 'application/json' } : undefined,
+				headers: Object.keys(headers).length > 0 ? headers : undefined,
 				body: body !== undefined ? JSON.stringify(body) : undefined
 			})
 			const payload = await res.json().catch(() => null)

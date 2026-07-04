@@ -6,14 +6,18 @@ const SkillController = require('../controllers/skill')
  *   - name: Skill
  *     description: |
  *       Catalog of skills used to autocomplete the Curriculum's `skills` field. Reading is
- *       public; per the Catalog contract, writing (create/update/delete) will be restricted to
- *       admin (`requireRole('admin')`) once the auth middleware is wired in (task 4) — these
- *       routes are open for now.
+ *       public; writing (create/update/delete) requires the admin role
+ *       (`Authorization: Bearer <token>` resolving to `role: "admin"` — see auth-middleware).
+ *       Exception: a new skill's automatic registration when a CV is saved happens in-process
+ *       (services/commands/registerNewSkills.js calling SkillService.add() directly), never
+ *       through this HTTP route, so it is unaffected by this gate.
  *
  * /skill:
  *   post:
  *     tags: [Skill]
- *     summary: Create a Skill
+ *     summary: Create a Skill (admin only)
+ *     security:
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -40,6 +44,12 @@ const SkillController = require('../controllers/skill')
  *               message: "Invalid input"
  *               statusCode: 400
  *               content: { code: "invalid_type", expected: "boolean", received: "undefined", path: ["active"], message: "Required" }
+ *       401:
+ *         description: Missing/malformed Authorization header, or an invalid/expired session (observed against the running app)
+ *         content: { application/json: { example: { success: false, message: "Missing or malformed Authorization header.", statusCode: 401, content: null } } }
+ *       403:
+ *         description: The authenticated user is not admin (observed against the running app)
+ *         content: { application/json: { example: { success: false, message: "This action requires the 'admin' role.", statusCode: 403, content: null } } }
  *       500:
  *         description: Unexpected server error
  *         content: { application/json: { example: { success: false, message: "An error occurred", statusCode: 500, content: null } } }
@@ -129,7 +139,9 @@ const SkillController = require('../controllers/skill')
  *         content: { application/json: { example: { success: false, message: "An unexpected error occurred. Please try again later.", statusCode: 500, content: null } } }
  *   put:
  *     tags: [Skill]
- *     summary: Replace a Skill
+ *     summary: Replace a Skill (admin only)
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -152,12 +164,20 @@ const SkillController = require('../controllers/skill')
  *       400:
  *         description: Validation error, or no Skill matches the given id
  *         content: { application/json: { example: { success: false, message: "Skill not found.", statusCode: 400, content: null } } }
+ *       401:
+ *         description: Missing/malformed Authorization header, or an invalid/expired session
+ *         content: { application/json: { example: { success: false, message: "Missing or malformed Authorization header.", statusCode: 401, content: null } } }
+ *       403:
+ *         description: The authenticated user is not admin
+ *         content: { application/json: { example: { success: false, message: "This action requires the 'admin' role.", statusCode: 403, content: null } } }
  *       500:
  *         description: Unexpected server error
  *         content: { application/json: { example: { success: false, message: "An error occurred", statusCode: 500, content: null } } }
  *   patch:
  *     tags: [Skill]
- *     summary: Update a Skill
+ *     summary: Update a Skill (admin only)
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -181,12 +201,20 @@ const SkillController = require('../controllers/skill')
  *       400:
  *         description: Validation error, or no Skill matches the given id
  *         content: { application/json: { example: { success: false, message: "Skill not found.", statusCode: 400, content: null } } }
+ *       401:
+ *         description: Missing/malformed Authorization header, or an invalid/expired session
+ *         content: { application/json: { example: { success: false, message: "Missing or malformed Authorization header.", statusCode: 401, content: null } } }
+ *       403:
+ *         description: The authenticated user is not admin
+ *         content: { application/json: { example: { success: false, message: "This action requires the 'admin' role.", statusCode: 403, content: null } } }
  *       500:
  *         description: Unexpected server error
  *         content: { application/json: { example: { success: false, message: "An error occurred", statusCode: 500, content: null } } }
  *   delete:
  *     tags: [Skill]
- *     summary: Delete a Skill
+ *     summary: Delete a Skill (admin only)
+ *     security:
+ *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -200,6 +228,12 @@ const SkillController = require('../controllers/skill')
  *       400:
  *         description: No Skill matches the given id
  *         content: { application/json: { example: { success: false, message: "Skill not found.", statusCode: 400, content: null } } }
+ *       401:
+ *         description: Missing/malformed Authorization header, or an invalid/expired session (observed against the running app)
+ *         content: { application/json: { example: { success: false, message: "Missing or malformed Authorization header.", statusCode: 401, content: null } } }
+ *       403:
+ *         description: The authenticated user is not admin (observed against the running app)
+ *         content: { application/json: { example: { success: false, message: "This action requires the 'admin' role.", statusCode: 403, content: null } } }
  *       500:
  *         description: Unexpected server error
  *         content: { application/json: { example: { success: false, message: "An error occurred", statusCode: 500, content: null } } }

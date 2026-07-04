@@ -5,6 +5,7 @@
 	"dependencies": {
 		"@cv-service/external-api-config": "*",
 		"@cv-service/handle-errors": "*",
+		"@cv-service/handle-response": "*",
 		"@cv-service/env-variables": "*"
 	}
 }
