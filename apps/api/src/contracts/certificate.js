@@ -12,6 +12,7 @@ class CertificateContract {
 
 	getContract() {
 		return {
+			id: true,
 			curriculum: true,
 			name: true,
 			date: true,

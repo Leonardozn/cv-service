@@ -344,8 +344,12 @@ class ExperienceService {
 	}
 
 	_normalizeContractPayload(payload) {
-		if (payload && typeof payload.toObject === 'function') return payload.toObject()
-		return payload
+		const plain = payload && typeof payload.toObject === 'function' ? payload.toObject() : payload
+		// The contract only ever copies keys it declares (see contracts/index.js), and Mongo's
+		// own key is '_id' - alias it to 'id' here so the contract can expose a clean identifier
+		// instead of leaving every response without any way to reference the record afterwards.
+		if (plain && typeof plain === 'object' && '_id' in plain) return { ...plain, id: String(plain._id) }
+		return plain
 	}
 
 	_getFilePaths(payload) {
