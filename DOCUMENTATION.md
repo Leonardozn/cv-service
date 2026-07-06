@@ -144,10 +144,13 @@ identidad validando el token). `photo` almacena solo el nombre del archivo subid
 | user           | reference → User | sí        | Dueño, único (id del User en auth-service)               |
 | fullName       | string           | sí        | Nombre completo mostrado como título del CV              |
 | headline       | array of string  | sí        | Frases cortas bajo el nombre (rol, foco, años de experiencia...); el PDF las dibuja unidas con "\|", igual que cuando era un único string escrito a mano |
-| city           | string           | sí        | Ciudad / ubicación (Datos personales)                    |
+| city           | string           | sí        | Ciudad (Datos personales); el PDF la dibuja junto a state/country como "Location: city/state/country" |
+| state          | string           | sí        | Departamento/estado (Datos personales); ver city         |
+| country        | string           | sí        | País (Datos personales); ver city                        |
 | photo          | string           | no        | Nombre de archivo de la foto de perfil (file upload)     |
 | profileSummary | string           | sí        | Texto libre del "Perfil"                                 |
 | skills         | array of string  | no        | Habilidades del sidebar (texto libre; Skill solo sugiere)|
+| phones         | array of string  | no        | Números de teléfono; el PDF los dibuja en una lista bajo la localidad, cada uno con "* " |
 | contactLinks   | array of object  | no        | Enlaces de contacto/redes bajo Datos personales          |
 | createdAt      | datetime         | sí        | Fecha de creación                                        |
 | updatedAt      | datetime         | sí        | Fecha de última actualización                            |
@@ -265,8 +268,9 @@ Resultado: Catálogo actualizado, o error de autorización.
    del User; si no, 404 (no encontrado para este usuario).
 3. Carga el Curriculum y sus entradas (Education, Experience, Certificate) y resuelve el Template
    (su `key` indica qué componente de diseño react-pdf usar).
-4. Renderiza el PDF con el componente del Template: sidebar (nombre, headline, foto, city,
-   contactLinks, habilidades) y columna principal (Perfil, Formación, Experiencia, Certificados).
+4. Renderiza el PDF con el componente del Template: sidebar (nombre, headline, foto, localidad
+   "city/state/country", teléfonos, contactLinks, habilidades) y columna principal (Perfil,
+   Formación, Experiencia, Certificados).
 5. Devuelve el PDF como descarga binaria, sin persistir.
 
 Resultado: Un PDF descargable con el diseño elegido, o 404 (no encontrado) si el curriculum no es

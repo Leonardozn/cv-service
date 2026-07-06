@@ -7,8 +7,11 @@ const SAMPLE_CURRICULUM = {
 	fullName: 'Jane Doe',
 	headline: ['Backend Engineer'],
 	city: 'Bogotá',
+	state: 'Cundinamarca',
+	country: 'Colombia',
 	profileSummary: '5+ years building distributed systems.',
 	skills: ['Node.js', 'MongoDB'],
+	phones: ['+573007654321', '+573101234567'],
 	contactLinks: [{ label: 'LinkedIn', url: 'linkedin.com/in/janedoe' }],
 	education: [{ title: 'B.Sc. Computer Science', institution: 'Universidad Nacional', startDate: '2016-01-15', endDate: '2020-01-01' }],
 	experience: [{ position: 'Backend Engineer', company: 'Acme Corp', startDate: '2021-03-01', description: 'Built and maintained payment services.' }],
@@ -50,6 +53,28 @@ test('PdfGeneratorHandler renderCurriculum() — throws for an unknown template 
 		() => handler.renderCurriculum({ templateKey: 'does-not-exist', curriculum: SAMPLE_CURRICULUM }),
 		{ message: "Unknown CV template key: 'does-not-exist'." }
 	)
+})
+
+test('PdfGeneratorHandler renderCurriculum() — draws city/state/country joined with "/" and phones as a bulleted list (FR contact info)', async () => {
+	const handler = PdfGeneratorHandler.getInstance()
+
+	const buffer = await handler.renderCurriculum({ templateKey: 'classic-two-columns', curriculum: SAMPLE_CURRICULUM })
+
+	const text = decodePdfText(buffer)
+	assert.match(text, /Location: Bogotá\/Cundinamarca\/Colombia/)
+	assert.match(text, /\* \+573007654321/)
+	assert.match(text, /\* \+573101234567/)
+})
+
+test('PdfGeneratorHandler renderCurriculum() — omits the Contact section entirely when there is no location, phones or contactLinks', async () => {
+	const handler = PdfGeneratorHandler.getInstance()
+
+	const buffer = await handler.renderCurriculum({
+		templateKey: 'classic-two-columns',
+		curriculum: { fullName: 'John Roe', headline: ['Developer'], profileSummary: 'Summary.' }
+	})
+
+	assert.doesNotMatch(decodePdfText(buffer), /Contact/)
 })
 
 test('PdfGeneratorHandler renderCurriculum() — joins multiple headline entries with "|" (FR headline array)', async () => {

@@ -14,7 +14,7 @@ beforeEach(() => {
 
 async function seedCurriculum(user) {
 	return await CurriculumService.getInstance().add({
-		body: { user, fullName: 'Jane Doe', headline: ['Backend Engineer'], city: 'Bogotá', profileSummary: 'Summary.' }
+		body: { user, fullName: 'Jane Doe', headline: ['Backend Engineer'], city: 'Bogotá', state: 'Cundinamarca', country: 'Colombia', profileSummary: 'Summary.' }
 	})
 }
 

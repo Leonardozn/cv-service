@@ -45,6 +45,14 @@ class CurriculumModel {
 				type: String,
 				required: true
 			},
+			state: {
+				type: String,
+				required: true
+			},
+			country: {
+				type: String,
+				required: true
+			},
 			photo: {
 				type: String
 			},
@@ -53,6 +61,9 @@ class CurriculumModel {
 				required: true
 			},
 			skills: {
+				type: [String]
+			},
+			phones: {
 				type: [String]
 			},
 			contactLinks: {

@@ -19,9 +19,14 @@ const SAMPLE = {
 		"fullName": "sample text",
 		"headline": ["sample text"],
 		"city": "sample text",
+		"state": "sample text",
+		"country": "sample text",
 		"photo": "sample text",
 		"profileSummary": "sample text",
 		"skills": [
+			"sample text"
+		],
+		"phones": [
 			"sample text"
 		],
 		"contactLinks": [

@@ -36,7 +36,7 @@ const CurriculumController = require('../controllers/curriculum')
  *         application/json:
  *           schema:
  *             type: object
- *             required: [fullName, headline, city, profileSummary]
+ *             required: [fullName, headline, city, state, country, profileSummary]
  *             properties:
  *               fullName: { type: string }
  *               headline:
@@ -44,11 +44,17 @@ const CurriculumController = require('../controllers/curriculum')
  *                 items: { type: string }
  *                 description: "Short phrases (role, focus, years of experience...); rendered in the PDF joined with '|'"
  *               city: { type: string }
+ *               state: { type: string }
+ *               country: { type: string }
  *               photo: { type: string, description: "Uploaded file's stored name" }
  *               profileSummary: { type: string }
  *               skills:
  *                 type: array
  *                 items: { type: string }
+ *               phones:
+ *                 type: array
+ *                 items: { type: string }
+ *                 description: "Phone numbers; rendered in the PDF's Contact section as a bulleted list"
  *               contactLinks:
  *                 type: array
  *                 items:
@@ -60,18 +66,23 @@ const CurriculumController = require('../controllers/curriculum')
  *           example:
  *             fullName: "Jane Doe"
  *             headline: ["Backend Engineer", "5+ years of experience"]
- *             city: "Bogotá"
+ *             city: "Cartagena"
+ *             state: "Bolívar"
+ *             country: "Colombia"
  *             profileSummary: "5+ years building distributed systems."
  *             skills: ["Node.js", "MongoDB"]
+ *             phones: ["+573007654321", "+573101234567"]
  *             contactLinks: [{ label: "LinkedIn", url: "linkedin.com/in/janedoe" }]
  *         multipart/form-data:
  *           schema:
  *             type: object
- *             required: [fullName, headline, city, profileSummary]
+ *             required: [fullName, headline, city, state, country, profileSummary]
  *             properties:
  *               fullName: { type: string }
  *               headline: { type: array, items: { type: string } }
  *               city: { type: string }
+ *               state: { type: string }
+ *               country: { type: string }
  *               profileSummary: { type: string }
  *               photo: { type: string, format: binary, description: "Profile photo file upload" }
  *     responses:
@@ -88,10 +99,13 @@ const CurriculumController = require('../controllers/curriculum')
  *                 user: "665f1c2b8f1b2c0012a3b456"
  *                 fullName: "Jane Doe"
  *                 headline: ["Backend Engineer", "5+ years of experience"]
- *                 city: "Bogotá"
+ *                 city: "Cartagena"
+ *                 state: "Bolívar"
+ *                 country: "Colombia"
  *                 photo: "jane-photo.png"
  *                 profileSummary: "5+ years building distributed systems."
  *                 skills: ["Node.js", "MongoDB"]
+ *                 phones: ["+573007654321", "+573101234567"]
  *                 contactLinks: [{ label: "LinkedIn", url: "linkedin.com/in/janedoe" }]
  *       400:
  *         description: |
@@ -107,6 +121,8 @@ const CurriculumController = require('../controllers/curriculum')
  *               content:
  *                 - { code: invalid_type, expected: array, received: undefined, path: [headline], message: Required }
  *                 - { code: invalid_type, expected: string, received: undefined, path: [city], message: Required }
+ *                 - { code: invalid_type, expected: string, received: undefined, path: [state], message: Required }
+ *                 - { code: invalid_type, expected: string, received: undefined, path: [country], message: Required }
  *                 - { code: invalid_type, expected: string, received: undefined, path: [profileSummary], message: Required }
  *       401:
  *         description: Missing/malformed Authorization header, or an invalid/expired session
@@ -123,10 +139,11 @@ const CurriculumController = require('../controllers/curriculum')
  *       an admin sees every Curriculum (FR admin override).
  *         - Equality filter:  `query[field]=value`            (e.g. query[city]=Bogotá)
  *         - Operator filter:  `query[field][operator]=value`  (e.g. query[fullName][like]=jane)
- *       Operators by type — user/fullName/city/photo/profileSummary (string): eq, ne,
- *       like, notLike, in, notIn, or. `headline`/`skills` (array of string, no allowAdvance) only
- *       support direct equality (matches records whose array contains the value). `contactLinks.label`
- *       and `contactLinks.url` (nested string subfields) support the same string operators.
+ *       Operators by type — user/fullName/city/state/country/photo/profileSummary (string): eq, ne,
+ *       like, notLike, in, notIn, or. `headline`/`skills`/`phones` (array of string, no allowAdvance)
+ *       only support direct equality (matches records whose array contains the value).
+ *       `contactLinks.label` and `contactLinks.url` (nested string subfields) support the same
+ *       string operators.
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -165,7 +182,7 @@ const CurriculumController = require('../controllers/curriculum')
  *               statusCode: 200
  *               content:
  *                 count: 1
- *                 records: [{ id: "665f...", user: "665f1c2b8f1b2c0012a3b456", fullName: "Jane Doe", headline: ["Backend Engineer"], city: "Bogotá", profileSummary: "5+ years building distributed systems.", skills: ["Node.js"], contactLinks: [] }]
+ *                 records: [{ id: "665f...", user: "665f1c2b8f1b2c0012a3b456", fullName: "Jane Doe", headline: ["Backend Engineer"], city: "Cartagena", state: "Bolívar", country: "Colombia", profileSummary: "5+ years building distributed systems.", skills: ["Node.js"], phones: ["+573007654321"], contactLinks: [] }]
  *       400:
  *         description: |
  *           Invalid filter/operator (e.g. an operator not supported by that field's type; observed
@@ -202,7 +219,7 @@ const CurriculumController = require('../controllers/curriculum')
  *     responses:
  *       200:
  *         description: Curriculum found
- *         content: { application/json: { example: { success: true, message: "Success!", statusCode: 200, content: { id: "665f...", user: "665f1c2b8f1b2c0012a3b456", fullName: "Jane Doe", headline: ["Backend Engineer"], city: "Bogotá", profileSummary: "5+ years building distributed systems." } } } }
+ *         content: { application/json: { example: { success: true, message: "Success!", statusCode: 200, content: { id: "665f...", user: "665f1c2b8f1b2c0012a3b456", fullName: "Jane Doe", headline: ["Backend Engineer"], city: "Cartagena", state: "Bolívar", country: "Colombia", profileSummary: "5+ years building distributed systems." } } } }
  *       401:
  *         description: Missing/malformed Authorization header, or an invalid/expired session
  *         content: { application/json: { example: { success: false, message: "Missing or malformed Authorization header.", statusCode: 401, content: null } } }
@@ -241,9 +258,12 @@ const CurriculumController = require('../controllers/curriculum')
  *               fullName: { type: string }
  *               headline: { type: array, items: { type: string } }
  *               city: { type: string }
+ *               state: { type: string }
+ *               country: { type: string }
  *               photo: { type: string }
  *               profileSummary: { type: string }
  *               skills: { type: array, items: { type: string } }
+ *               phones: { type: array, items: { type: string } }
  *               contactLinks:
  *                 type: array
  *                 items:
@@ -257,12 +277,14 @@ const CurriculumController = require('../controllers/curriculum')
  *               fullName: { type: string }
  *               headline: { type: array, items: { type: string } }
  *               city: { type: string }
+ *               state: { type: string }
+ *               country: { type: string }
  *               profileSummary: { type: string }
  *               photo: { type: string, format: binary, description: "Replaces the profile photo file" }
  *     responses:
  *       200:
  *         description: Curriculum replaced
- *         content: { application/json: { example: { success: true, message: "Success!", statusCode: 200, content: { id: "665f...", user: "665f1c2b8f1b2c0012a3b456", fullName: "Jane Doe", headline: ["Backend Engineer"], city: "Bogotá", profileSummary: "Updated summary." } } } }
+ *         content: { application/json: { example: { success: true, message: "Success!", statusCode: 200, content: { id: "665f...", user: "665f1c2b8f1b2c0012a3b456", fullName: "Jane Doe", headline: ["Backend Engineer"], city: "Cartagena", state: "Bolívar", country: "Colombia", profileSummary: "Updated summary." } } } }
  *       400:
  *         description: Validation error
  *         content: { application/json: { example: { success: false, message: "Curriculum not found.", statusCode: 400, content: null } } }
@@ -303,6 +325,8 @@ const CurriculumController = require('../controllers/curriculum')
  *               fullName: { type: string }
  *               headline: { type: array, items: { type: string } }
  *               city: { type: string }
+ *               state: { type: string }
+ *               country: { type: string }
  *               profileSummary: { type: string }
  *           example: { headline: ["Senior Backend Engineer"] }
  *         multipart/form-data:
@@ -312,12 +336,14 @@ const CurriculumController = require('../controllers/curriculum')
  *               fullName: { type: string }
  *               headline: { type: array, items: { type: string } }
  *               city: { type: string }
+ *               state: { type: string }
+ *               country: { type: string }
  *               profileSummary: { type: string }
  *               photo: { type: string, format: binary, description: "Replaces the profile photo file (any other omitted field is left unchanged)" }
  *     responses:
  *       200:
  *         description: Curriculum updated
- *         content: { application/json: { example: { success: true, message: "Success!", statusCode: 200, content: { id: "665f...", user: "665f1c2b8f1b2c0012a3b456", fullName: "Jane Doe", headline: ["Senior Backend Engineer"], city: "Bogotá", profileSummary: "5+ years building distributed systems." } } } }
+ *         content: { application/json: { example: { success: true, message: "Success!", statusCode: 200, content: { id: "665f...", user: "665f1c2b8f1b2c0012a3b456", fullName: "Jane Doe", headline: ["Senior Backend Engineer"], city: "Cartagena", state: "Bolívar", country: "Colombia", profileSummary: "5+ years building distributed systems." } } } }
  *       400:
  *         description: Validation error
  *         content: { application/json: { example: { success: false, message: "Curriculum not found.", statusCode: 400, content: null } } }

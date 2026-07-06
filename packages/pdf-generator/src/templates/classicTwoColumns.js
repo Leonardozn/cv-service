@@ -9,7 +9,6 @@ const styles = StyleSheet.create({
 	photo: { width: 80, height: 80, borderRadius: 40, marginBottom: 12, alignSelf: 'center' },
 	name: { fontSize: 16, fontWeight: 700, marginBottom: 4, textAlign: 'center' },
 	headline: { fontSize: 10, marginBottom: 10, textAlign: 'center' },
-	city: { fontSize: 9, marginBottom: 14, textAlign: 'center' },
 	sidebarSectionTitle: { fontSize: 10, fontWeight: 700, marginTop: 12, marginBottom: 6, textTransform: 'uppercase' },
 	sidebarLine: { fontSize: 9, marginBottom: 4 },
 	mainSectionTitle: { fontSize: 11, fontWeight: 700, marginTop: 14, marginBottom: 6, textTransform: 'uppercase', color: '#2d3748' },
@@ -39,7 +38,7 @@ function formatDateRange(startDate, endDate, fallback) {
 // and a main column (profile summary, education, experience, certificates).
 function ClassicTwoColumns({ curriculum = {} }) {
 	const {
-		fullName, headline = [], photo, city, contactLinks = [], skills = [],
+		fullName, headline = [], photo, city, state, country, contactLinks = [], skills = [], phones = [],
 		profileSummary, education = [], experience = [], certificate = []
 	} = curriculum
 
@@ -49,10 +48,15 @@ function ClassicTwoColumns({ curriculum = {} }) {
 	// headline is a list of short phrases (e.g. role, focus, years of experience) - drawn as a
 	// single line, same as when it was one free-text string with '|' typed in by hand.
 	if (headline.length > 0) sidebarChildren.push(React.createElement(Text, { key: 'headline', style: styles.headline }, headline.join(' | ')))
-	if (city) sidebarChildren.push(React.createElement(Text, { key: 'city', style: styles.city }, city))
 
-	if (contactLinks.length > 0) {
+	const location = [city, state, country].filter(Boolean).join('/')
+
+	if (location || phones.length > 0 || contactLinks.length > 0) {
 		sidebarChildren.push(React.createElement(Text, { key: 'contact-title', style: styles.sidebarSectionTitle }, 'Contact'))
+		if (location) sidebarChildren.push(React.createElement(Text, { key: 'location', style: styles.sidebarLine }, `Location: ${location}`))
+		phones.forEach((phone, index) => {
+			sidebarChildren.push(React.createElement(Text, { key: `phone-${index}`, style: styles.sidebarLine }, `* ${phone}`))
+		})
 		contactLinks.forEach((link, index) => {
 			sidebarChildren.push(React.createElement(Text, { key: `contact-${index}`, style: styles.sidebarLine }, `${link.label}: ${link.url}`))
 		})
