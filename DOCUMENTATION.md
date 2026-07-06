@@ -143,7 +143,7 @@ identidad validando el token). `photo` almacena solo el nombre del archivo subid
 | id             | id               | sí        | Identificador único del curriculum                       |
 | user           | reference → User | sí        | Dueño, único (id del User en auth-service)               |
 | fullName       | string           | sí        | Nombre completo mostrado como título del CV              |
-| headline       | string           | sí        | Titular/eslogan profesional bajo el nombre               |
+| headline       | array of string  | sí        | Frases cortas bajo el nombre (rol, foco, años de experiencia...); el PDF las dibuja unidas con "\|", igual que cuando era un único string escrito a mano |
 | city           | string           | sí        | Ciudad / ubicación (Datos personales)                    |
 | photo          | string           | no        | Nombre de archivo de la foto de perfil (file upload)     |
 | profileSummary | string           | sí        | Texto libre del "Perfil"                                 |

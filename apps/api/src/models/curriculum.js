@@ -38,7 +38,7 @@ class CurriculumModel {
 				required: true
 			},
 			headline: {
-				type: String,
+				type: [String],
 				required: true
 			},
 			city: {

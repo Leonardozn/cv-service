@@ -49,7 +49,10 @@ class CurriculumInterfaces {
 		this.createInterface = this.dataValidatorHandler.validate({
 			user: { type: this.types.string },
 			fullName: { type: this.types.string },
-			headline: { type: this.types.string },
+			headline: {
+				type: this.types.array,
+				contentType: this.types.string
+			},
 			city: { type: this.types.string },
 			photo: { type: this.types.string, optional: true },
 			profileSummary: { type: this.types.string },
@@ -72,7 +75,11 @@ class CurriculumInterfaces {
 		this.updateInterface = this.dataValidatorHandler.validate({
 			user: { type: this.types.string, optional: true },
 			fullName: { type: this.types.string, optional: true },
-			headline: { type: this.types.string, optional: true },
+			headline: {
+				type: this.types.array,
+				contentType: this.types.string,
+				optional: true
+			},
 			city: { type: this.types.string, optional: true },
 			photo: { type: this.types.string, optional: true },
 			profileSummary: { type: this.types.string, optional: true },
@@ -98,7 +105,11 @@ class CurriculumInterfaces {
 			_id: { type: this.types.objectId, optional: true, transform: true, allowAdvance: true },
 			user: { type: this.types.string, optional: true, transform: true, allowAdvance: true },
 			fullName: { type: this.types.string, optional: true, transform: true, allowAdvance: true },
-			headline: { type: this.types.string, optional: true, transform: true, allowAdvance: true },
+			headline: {
+				type: this.types.array,
+				contentType: this.types.string,
+				optional: true
+			},
 			city: { type: this.types.string, optional: true, transform: true, allowAdvance: true },
 			photo: { type: this.types.string, optional: true, transform: true, allowAdvance: true },
 			profileSummary: { type: this.types.string, optional: true, transform: true, allowAdvance: true },
@@ -124,7 +135,12 @@ class CurriculumInterfaces {
 			_id: { type: this.types.string, optional: true, isVirtual: true },
 			user: { type: this.types.string, optional: true, isVirtual: true },
 			fullName: { type: this.types.string, optional: true, isVirtual: true },
-			headline: { type: this.types.string, optional: true, isVirtual: true },
+			headline: {
+				type: this.types.array,
+				contentType: this.types.string,
+				optional: true,
+				canBeVirtual: true
+			},
 			city: { type: this.types.string, optional: true, isVirtual: true },
 			photo: { type: this.types.string, optional: true, isVirtual: true },
 			profileSummary: { type: this.types.string, optional: true, isVirtual: true },
