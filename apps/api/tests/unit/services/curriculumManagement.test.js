@@ -20,7 +20,7 @@ test('CurriculumManagementService save() — creates the user\'s first Curriculu
 	const service = CurriculumManagementService.getInstance()
 
 	const result = await service.save({
-		body: { user: 'user-1', fullName: 'Jane Doe', headline: 'Backend Engineer', city: 'Bogotá', profileSummary: 'Summary.', skills: ['Node.js', 'MongoDB'] }
+		body: { user: 'user-1', fullName: 'Jane Doe', headline: ['Backend Engineer'], city: 'Bogotá', profileSummary: 'Summary.', skills: ['Node.js', 'MongoDB'] }
 	})
 
 	assert.equal(result.fullName, 'Jane Doe')
@@ -34,15 +34,15 @@ test('CurriculumManagementService save() — creates the user\'s first Curriculu
 test('CurriculumManagementService save() — updates the user\'s existing Curriculum instead of creating a second one', async () => {
 	const service = CurriculumManagementService.getInstance()
 	const first = await service.save({
-		body: { user: 'user-1', fullName: 'Jane Doe', headline: 'Backend Engineer', city: 'Bogotá', profileSummary: 'Summary.' }
+		body: { user: 'user-1', fullName: 'Jane Doe', headline: ['Backend Engineer'], city: 'Bogotá', profileSummary: 'Summary.' }
 	})
 
 	const second = await service.save({
-		body: { user: 'user-1', fullName: 'Jane Doe', headline: 'Senior Backend Engineer', city: 'Bogotá', profileSummary: 'Summary.' }
+		body: { user: 'user-1', fullName: 'Jane Doe', headline: ['Senior Backend Engineer'], city: 'Bogotá', profileSummary: 'Summary.' }
 	})
 
 	assert.equal(second.id, first.id)
-	assert.equal(second.headline, 'Senior Backend Engineer')
+	assert.deepEqual(second.headline, ['Senior Backend Engineer'])
 })
 
 test('CurriculumManagementService save() — does not register a skill that is already in the catalog', async () => {
@@ -50,7 +50,7 @@ test('CurriculumManagementService save() — does not register a skill that is a
 	await SkillService.getInstance().add({ body: { name: 'Node.js', active: true } })
 
 	await service.save({
-		body: { user: 'user-1', fullName: 'Jane Doe', headline: 'Backend Engineer', city: 'Bogotá', profileSummary: 'Summary.', skills: ['Node.js'] }
+		body: { user: 'user-1', fullName: 'Jane Doe', headline: ['Backend Engineer'], city: 'Bogotá', profileSummary: 'Summary.', skills: ['Node.js'] }
 	})
 
 	const skills = await SkillService.getInstance().list({})
@@ -60,12 +60,12 @@ test('CurriculumManagementService save() — does not register a skill that is a
 test('CurriculumManagementService saveEntry() — updates the given Curriculum and registers new skills', async () => {
 	const service = CurriculumManagementService.getInstance()
 	const created = await service.save({
-		body: { user: 'user-1', fullName: 'Jane Doe', headline: 'Backend Engineer', city: 'Bogotá', profileSummary: 'Summary.' }
+		body: { user: 'user-1', fullName: 'Jane Doe', headline: ['Backend Engineer'], city: 'Bogotá', profileSummary: 'Summary.' }
 	})
 
-	const result = await service.saveEntry({ id: created.id, body: { headline: 'Senior Backend Engineer', skills: ['Kubernetes'] }, user: OWNER })
+	const result = await service.saveEntry({ id: created.id, body: { headline: ['Senior Backend Engineer'], skills: ['Kubernetes'] }, user: OWNER })
 
-	assert.equal(result.headline, 'Senior Backend Engineer')
+	assert.deepEqual(result.headline, ['Senior Backend Engineer'])
 	const skills = await SkillService.getInstance().list({})
 	assert.equal(skills.count, 1)
 	assert.equal(skills.records[0].name, 'Kubernetes')
@@ -74,11 +74,11 @@ test('CurriculumManagementService saveEntry() — updates the given Curriculum a
 test('CurriculumManagementService saveEntry() — throws a NotFoundError when the Curriculum belongs to a different user (FR ownership)', async () => {
 	const service = CurriculumManagementService.getInstance()
 	const created = await service.save({
-		body: { user: 'user-1', fullName: 'Jane Doe', headline: 'Backend Engineer', city: 'Bogotá', profileSummary: 'Summary.' }
+		body: { user: 'user-1', fullName: 'Jane Doe', headline: ['Backend Engineer'], city: 'Bogotá', profileSummary: 'Summary.' }
 	})
 
 	await assert.rejects(
-		() => service.saveEntry({ id: created.id, body: { headline: 'Hijacked' }, user: { id: 'someone-else', role: 'user' } }),
+		() => service.saveEntry({ id: created.id, body: { headline: ['Hijacked'] }, user: { id: 'someone-else', role: 'user' } }),
 		{ name: 'NotFoundError', message: 'Curriculum not found.' }
 	)
 })
@@ -86,18 +86,18 @@ test('CurriculumManagementService saveEntry() — throws a NotFoundError when th
 test('CurriculumManagementService saveEntry() — an admin can update a Curriculum owned by someone else (FR admin override)', async () => {
 	const service = CurriculumManagementService.getInstance()
 	const created = await service.save({
-		body: { user: 'user-1', fullName: 'Jane Doe', headline: 'Backend Engineer', city: 'Bogotá', profileSummary: 'Summary.' }
+		body: { user: 'user-1', fullName: 'Jane Doe', headline: ['Backend Engineer'], city: 'Bogotá', profileSummary: 'Summary.' }
 	})
 
-	const result = await service.saveEntry({ id: created.id, body: { headline: 'Updated by admin' }, user: ADMIN })
+	const result = await service.saveEntry({ id: created.id, body: { headline: ['Updated by admin'] }, user: ADMIN })
 
-	assert.equal(result.headline, 'Updated by admin')
+	assert.deepEqual(result.headline, ['Updated by admin'])
 })
 
 test('CurriculumManagementService findOne() — returns the caller\'s own Curriculum', async () => {
 	const service = CurriculumManagementService.getInstance()
 	const created = await service.save({
-		body: { user: 'user-1', fullName: 'Jane Doe', headline: 'Backend Engineer', city: 'Bogotá', profileSummary: 'Summary.' }
+		body: { user: 'user-1', fullName: 'Jane Doe', headline: ['Backend Engineer'], city: 'Bogotá', profileSummary: 'Summary.' }
 	})
 
 	const result = await service.findOne({ id: created.id, user: OWNER })
@@ -108,7 +108,7 @@ test('CurriculumManagementService findOne() — returns the caller\'s own Curric
 test('CurriculumManagementService findOne() — throws a NotFoundError when the Curriculum belongs to a different user (FR ownership)', async () => {
 	const service = CurriculumManagementService.getInstance()
 	const created = await service.save({
-		body: { user: 'user-1', fullName: 'Jane Doe', headline: 'Backend Engineer', city: 'Bogotá', profileSummary: 'Summary.' }
+		body: { user: 'user-1', fullName: 'Jane Doe', headline: ['Backend Engineer'], city: 'Bogotá', profileSummary: 'Summary.' }
 	})
 
 	await assert.rejects(
@@ -120,7 +120,7 @@ test('CurriculumManagementService findOne() — throws a NotFoundError when the 
 test('CurriculumManagementService findOne() — an admin can read a Curriculum owned by someone else (FR admin override)', async () => {
 	const service = CurriculumManagementService.getInstance()
 	const created = await service.save({
-		body: { user: 'user-1', fullName: 'Jane Doe', headline: 'Backend Engineer', city: 'Bogotá', profileSummary: 'Summary.' }
+		body: { user: 'user-1', fullName: 'Jane Doe', headline: ['Backend Engineer'], city: 'Bogotá', profileSummary: 'Summary.' }
 	})
 
 	const result = await service.findOne({ id: created.id, user: ADMIN })
@@ -130,8 +130,8 @@ test('CurriculumManagementService findOne() — an admin can read a Curriculum o
 
 test('CurriculumManagementService list() — a non-admin user only sees their own Curriculum', async () => {
 	const service = CurriculumManagementService.getInstance()
-	await service.save({ body: { user: 'user-1', fullName: 'Jane Doe', headline: 'Backend Engineer', city: 'Bogotá', profileSummary: 'Summary.' } })
-	await service.save({ body: { user: 'user-2', fullName: 'John Roe', headline: 'Frontend Engineer', city: 'Bogotá', profileSummary: 'Summary.' } })
+	await service.save({ body: { user: 'user-1', fullName: 'Jane Doe', headline: ['Backend Engineer'], city: 'Bogotá', profileSummary: 'Summary.' } })
+	await service.save({ body: { user: 'user-2', fullName: 'John Roe', headline: ['Frontend Engineer'], city: 'Bogotá', profileSummary: 'Summary.' } })
 
 	const result = await service.list({ query: {}, user: OWNER })
 
@@ -141,8 +141,8 @@ test('CurriculumManagementService list() — a non-admin user only sees their ow
 
 test('CurriculumManagementService list() — an admin sees every Curriculum (FR admin override)', async () => {
 	const service = CurriculumManagementService.getInstance()
-	await service.save({ body: { user: 'user-1', fullName: 'Jane Doe', headline: 'Backend Engineer', city: 'Bogotá', profileSummary: 'Summary.' } })
-	await service.save({ body: { user: 'user-2', fullName: 'John Roe', headline: 'Frontend Engineer', city: 'Bogotá', profileSummary: 'Summary.' } })
+	await service.save({ body: { user: 'user-1', fullName: 'Jane Doe', headline: ['Backend Engineer'], city: 'Bogotá', profileSummary: 'Summary.' } })
+	await service.save({ body: { user: 'user-2', fullName: 'John Roe', headline: ['Frontend Engineer'], city: 'Bogotá', profileSummary: 'Summary.' } })
 
 	const result = await service.list({ query: {}, user: ADMIN })
 
@@ -152,22 +152,22 @@ test('CurriculumManagementService list() — an admin sees every Curriculum (FR 
 test('CurriculumManagementService replaceEntry() — replaces the caller\'s own Curriculum', async () => {
 	const service = CurriculumManagementService.getInstance()
 	const created = await service.save({
-		body: { user: 'user-1', fullName: 'Jane Doe', headline: 'Backend Engineer', city: 'Bogotá', profileSummary: 'Summary.' }
+		body: { user: 'user-1', fullName: 'Jane Doe', headline: ['Backend Engineer'], city: 'Bogotá', profileSummary: 'Summary.' }
 	})
 
 	const result = await service.replaceEntry({
 		id: created.id,
-		body: { user: 'user-1', fullName: 'Jane Doe', headline: 'Replaced', city: 'Bogotá', profileSummary: 'Summary.' },
+		body: { user: 'user-1', fullName: 'Jane Doe', headline: ['Replaced'], city: 'Bogotá', profileSummary: 'Summary.' },
 		user: OWNER
 	})
 
-	assert.equal(result.headline, 'Replaced')
+	assert.deepEqual(result.headline, ['Replaced'])
 })
 
 test('CurriculumManagementService replaceEntry() — throws a NotFoundError when the Curriculum belongs to a different user (FR ownership)', async () => {
 	const service = CurriculumManagementService.getInstance()
 	const created = await service.save({
-		body: { user: 'user-1', fullName: 'Jane Doe', headline: 'Backend Engineer', city: 'Bogotá', profileSummary: 'Summary.' }
+		body: { user: 'user-1', fullName: 'Jane Doe', headline: ['Backend Engineer'], city: 'Bogotá', profileSummary: 'Summary.' }
 	})
 
 	await assert.rejects(
@@ -179,7 +179,7 @@ test('CurriculumManagementService replaceEntry() — throws a NotFoundError when
 test('CurriculumManagementService removeEntry() — removes the caller\'s own Curriculum', async () => {
 	const service = CurriculumManagementService.getInstance()
 	const created = await service.save({
-		body: { user: 'user-1', fullName: 'Jane Doe', headline: 'Backend Engineer', city: 'Bogotá', profileSummary: 'Summary.' }
+		body: { user: 'user-1', fullName: 'Jane Doe', headline: ['Backend Engineer'], city: 'Bogotá', profileSummary: 'Summary.' }
 	})
 
 	await service.removeEntry({ id: created.id, user: OWNER })
@@ -191,7 +191,7 @@ test('CurriculumManagementService removeEntry() — removes the caller\'s own Cu
 test('CurriculumManagementService removeEntry() — throws a NotFoundError when the Curriculum belongs to a different user (FR ownership)', async () => {
 	const service = CurriculumManagementService.getInstance()
 	const created = await service.save({
-		body: { user: 'user-1', fullName: 'Jane Doe', headline: 'Backend Engineer', city: 'Bogotá', profileSummary: 'Summary.' }
+		body: { user: 'user-1', fullName: 'Jane Doe', headline: ['Backend Engineer'], city: 'Bogotá', profileSummary: 'Summary.' }
 	})
 
 	await assert.rejects(

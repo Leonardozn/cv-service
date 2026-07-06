@@ -17,7 +17,7 @@ const ADMIN_AUTH = { Authorization: 'Bearer admin-token' }
 const SAMPLE = {
 		"user": "fixture-user",
 		"fullName": "sample text",
-		"headline": "sample text",
+		"headline": ["sample text"],
 		"city": "sample text",
 		"photo": "sample text",
 		"profileSummary": "sample text",
@@ -190,10 +190,10 @@ test('curriculum routes — PATCH lets an admin update a Curriculum owned by som
 	const app = await runApp(seededEnv())
 
 	try {
-		const res = await app.request('PATCH', `${app.path}/curriculum/${SEED_ID}`, { ...SAMPLE, headline: 'Updated by admin' }, ADMIN_AUTH)
+		const res = await app.request('PATCH', `${app.path}/curriculum/${SEED_ID}`, { ...SAMPLE, headline: ['Updated by admin'] }, ADMIN_AUTH)
 
 		assert.equal(res.status, 200)
-		assert.equal(res.body.content.headline, 'Updated by admin')
+		assert.deepEqual(res.body.content.headline, ['Updated by admin'])
 	} finally {
 		await app.stop()
 	}
@@ -353,10 +353,10 @@ test('curriculum routes — POST /curriculum twice with the same user updates it
 
 	try {
 		const first = await app.request('POST', `${app.path}/curriculum`, SAMPLE, OWNER_AUTH)
-		const second = await app.request('POST', `${app.path}/curriculum`, { ...SAMPLE, headline: 'Updated headline' }, OWNER_AUTH)
+		const second = await app.request('POST', `${app.path}/curriculum`, { ...SAMPLE, headline: ['Updated headline'] }, OWNER_AUTH)
 
 		assert.equal(second.body.content.id, first.body.content.id)
-		assert.equal(second.body.content.headline, 'Updated headline')
+		assert.deepEqual(second.body.content.headline, ['Updated headline'])
 
 		const list = await app.request('GET', `${app.path}/curriculum`, undefined, OWNER_AUTH)
 		assert.equal(list.body.content.count, 1)

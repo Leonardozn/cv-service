@@ -21,7 +21,7 @@ test('ResolveCurriculumScope — a non-admin user is scoped to their own Curricu
 	const curriculumService = CurriculumService.getInstance()
 	const command = ResolveCurriculumScope.getInstance()
 	const created = await curriculumService.add({
-		body: { user: 'user-1', fullName: 'Jane Doe', headline: 'Backend Engineer', city: 'Bogotá', profileSummary: 'Summary.' }
+		body: { user: 'user-1', fullName: 'Jane Doe', headline: ['Backend Engineer'], city: 'Bogotá', profileSummary: 'Summary.' }
 	})
 
 	const result = await command.execute({ curriculumService, user: { id: 'user-1', role: 'user' } })
