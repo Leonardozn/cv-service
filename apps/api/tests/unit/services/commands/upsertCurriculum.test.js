@@ -10,7 +10,7 @@ beforeEach(() => {
 
 test('UpsertCurriculum — creates the user\'s first Curriculum when none exists yet', async () => {
 	const command = UpsertCurriculum.getInstance()
-	const body = { user: 'user-1', fullName: 'Jane Doe', headline: ['Backend Engineer'], city: 'Bogotá', profileSummary: 'Summary.' }
+	const body = { user: 'user-1', fullName: 'Jane Doe', headline: ['Backend Engineer'], city: 'Bogotá', state: 'Cundinamarca', country: 'Colombia', profileSummary: 'Summary.' }
 
 	const result = await command.execute({ curriculumService: CurriculumService.getInstance(), body, files: [] })
 
@@ -23,12 +23,12 @@ test('UpsertCurriculum — updates the user\'s existing Curriculum instead of cr
 	const curriculumService = CurriculumService.getInstance()
 	const command = UpsertCurriculum.getInstance()
 	const created = await curriculumService.add({
-		body: { user: 'user-1', fullName: 'Jane Doe', headline: ['Backend Engineer'], city: 'Bogotá', profileSummary: 'Summary.' }
+		body: { user: 'user-1', fullName: 'Jane Doe', headline: ['Backend Engineer'], city: 'Bogotá', state: 'Cundinamarca', country: 'Colombia', profileSummary: 'Summary.' }
 	})
 
 	const result = await command.execute({
 		curriculumService,
-		body: { user: 'user-1', fullName: 'Jane Doe', headline: ['Senior Backend Engineer'], city: 'Bogotá', profileSummary: 'Summary.' }
+		body: { user: 'user-1', fullName: 'Jane Doe', headline: ['Senior Backend Engineer'], city: 'Bogotá', state: 'Cundinamarca', country: 'Colombia', profileSummary: 'Summary.' }
 	})
 
 	assert.equal(result.id, created.id)

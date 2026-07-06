@@ -26,7 +26,12 @@ function decodePdfText(buffer) {
 		}
 	}
 
-	return text
+	// A long unbroken run (e.g. "city/state/country" with no spaces) can get automatically
+	// hyphenated by react-pdf's line-wrapping when it doesn't fit the given width, inserting a
+	// '-' directly between two letters - that's a layout artifact, not real content. Only strip
+	// letter-letter hyphens (not digit-digit, e.g. a formatted date range like "2016-01-15", which
+	// is real content and must survive untouched).
+	return text.replace(/([A-Za-zÀ-ÿ])-([A-Za-zÀ-ÿ])/g, '$1$2')
 }
 
 module.exports = { decodePdfText }

@@ -26,7 +26,7 @@ const SEED_ID = '64b0c0ffee1234567890abcf'
 
 function seededCurriculumEnv() {
 	return {
-		MOCK_SEED_EXTRA: JSON.stringify([{ schema: 'curriculum', id: CURRICULUM_ID, record: { user: 'fixture-user', fullName: 'Jane Doe', headline: ['Backend Engineer'], city: 'Bogotá', profileSummary: 'Summary.' } }])
+		MOCK_SEED_EXTRA: JSON.stringify([{ schema: 'curriculum', id: CURRICULUM_ID, record: { user: 'fixture-user', fullName: 'Jane Doe', headline: ['Backend Engineer'], city: 'Bogotá', state: 'Cundinamarca', country: 'Colombia', profileSummary: 'Summary.' } }])
 	}
 }
 

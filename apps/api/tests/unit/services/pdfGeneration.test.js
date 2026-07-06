@@ -21,8 +21,11 @@ function seedCurriculum(overrides = {}) {
 		fullName: 'Jane Doe',
 		headline: ['Backend Engineer'],
 		city: 'Bogotá',
+		state: 'Cundinamarca',
+		country: 'Colombia',
 		profileSummary: 'Summary.',
 		skills: ['Node.js'],
+		phones: ['+573007654321'],
 		contactLinks: [],
 		createdAt: now,
 		updatedAt: now,
@@ -86,6 +89,18 @@ test('PdfGenerationService generatePdf() — Experience dates keep the year end-
 	const buffer = await service.generatePdf({ id: CURRICULUM_ID, body: {}, user: OWNER })
 
 	assert.match(decodePdfText(buffer), /2021-03-01 - Present/)
+})
+
+test('PdfGenerationService generatePdf() — draws city/state/country and phones in the Contact section end-to-end (FR contact info)', async () => {
+	seedCurriculum()
+	seedTemplate()
+	const service = PdfGenerationService.getInstance()
+
+	const buffer = await service.generatePdf({ id: CURRICULUM_ID, body: {}, user: OWNER })
+
+	const text = decodePdfText(buffer)
+	assert.match(text, /Location: Bogotá\/Cundinamarca\/Colombia/)
+	assert.match(text, /\* \+573007654321/)
 })
 
 test('PdfGenerationService generatePdf() — renders with an explicitly requested Template id', async () => {
