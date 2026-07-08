@@ -1,14 +1,13 @@
-const path = require('path')
 const CurriculumService = require('./curriculum')
 const EducationService = require('./education')
 const ExperienceService = require('./experience')
 const CertificateService = require('./certificate')
 const TemplateService = require('./template')
 const PdfGeneratorHandler = require('../handlers/pdfGenerator')
-const envVariables = require('../handlers/envVariables')
 const LoadCurriculumEntries = require('./commands/loadCurriculumEntries')
 const ResolveTemplate = require('./commands/resolveTemplate')
 const AssertCurriculumAccess = require('./commands/assertCurriculumAccess')
+const ResolveCurriculumPhoto = require('./commands/resolveCurriculumPhoto')
 
 class PdfGenerationService {
 	/**
@@ -28,6 +27,7 @@ class PdfGenerationService {
 		this.loadCurriculumEntries = LoadCurriculumEntries.getInstance()
 		this.resolveTemplate = ResolveTemplate.getInstance()
 		this.assertCurriculumAccess = AssertCurriculumAccess.getInstance()
+		this.resolveCurriculumPhoto = ResolveCurriculumPhoto.getInstance()
 	}
 
 	static getInstance() {
@@ -60,20 +60,14 @@ class PdfGenerationService {
 			templateId: body.template
 		})
 
-		// Step 4: render the PDF with the resolved design
+		// Step 4: read the stored photo file into image data the renderer can embed directly
+		const photo = await this.resolveCurriculumPhoto.execute({ photo: curriculum.photo })
+
+		// Step 5: render the PDF with the resolved design
 		return await this.pdfGeneratorHandler.renderCurriculum({
-			curriculum: { ...curriculum, ...entries, photo: this._resolvePhotoPath(curriculum.photo) },
+			curriculum: { ...curriculum, ...entries, photo },
 			templateKey: template.key
 		})
-	}
-
-	/**
-	 * @private
-	 */
-	_resolvePhotoPath(photo) {
-		if (!photo) return undefined
-		const destinationPath = envVariables.API_UPLOAD_PATH || path.join(process.cwd(), 'api-uploads')
-		return path.join(destinationPath, photo)
 	}
 }
 
