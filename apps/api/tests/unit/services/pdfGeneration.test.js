@@ -1,5 +1,16 @@
 const { test, beforeEach } = require('node:test')
 const assert = require('node:assert/strict')
+const fs = require('fs')
+const os = require('os')
+const path = require('path')
+
+// envVariables.js reads process.env once at require time - point API_UPLOAD_PATH at an isolated
+// temp directory before anything transitively requires it (PdfGenerationService ->
+// ResolveCurriculumPhoto), so the photo-embedding test below is cwd-independent and never touches
+// the real api-uploads directory.
+const UPLOAD_DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'cv-service-pdf-photo-'))
+process.env.API_UPLOAD_PATH = process.env.API_UPLOAD_PATH || UPLOAD_DIR
+
 const MockRepository = require('../../support/mock-repository-preload')
 const PdfGenerationService = require('../../../src/services/pdfGeneration')
 const { decodePdfText } = require('../../support/decodePdfText')
@@ -7,6 +18,13 @@ const { decodePdfText } = require('../../support/decodePdfText')
 const CURRICULUM_ID = '64b0c0ffee1234567890abcd'
 const TEMPLATE_ID = '64b0c0ffee1234567890abce'
 const OWNER = { id: 'user-1', role: 'user' }
+
+// Smallest possible valid PNG (1x1 transparent pixel) - real magic bytes so react-pdf's format
+// sniffing (PNG.isValid) accepts it as embeddable image data, not just an opaque Buffer.
+const SAMPLE_PNG = Buffer.from(
+	'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=',
+	'base64'
+)
 
 beforeEach(() => {
 	MockRepository.reset()
@@ -101,6 +119,28 @@ test('PdfGenerationService generatePdf() — draws city/state/country and phones
 	const text = decodePdfText(buffer)
 	assert.match(text, /Location: Bogotá\/Cundinamarca\/Colombia/)
 	assert.match(text, /\* \+573007654321/)
+})
+
+test('PdfGenerationService generatePdf() — embeds the Curriculum photo read from disk (FR photo in PDF)', async () => {
+	fs.writeFileSync(path.join(UPLOAD_DIR, 'me.png'), SAMPLE_PNG)
+	seedCurriculum({ photo: 'me.png' })
+	seedTemplate()
+	const service = PdfGenerationService.getInstance()
+
+	const buffer = await service.generatePdf({ id: CURRICULUM_ID, body: {}, user: OWNER })
+
+	assert.match(buffer.toString('latin1'), /\/Subtype\s*\/Image/)
+})
+
+test('PdfGenerationService generatePdf() — omits the photo (without failing) when the stored file is missing on disk', async () => {
+	seedCurriculum({ photo: 'does-not-exist.png' })
+	seedTemplate()
+	const service = PdfGenerationService.getInstance()
+
+	const buffer = await service.generatePdf({ id: CURRICULUM_ID, body: {}, user: OWNER })
+
+	assert.equal(buffer.subarray(0, 5).toString('latin1'), '%PDF-')
+	assert.doesNotMatch(buffer.toString('latin1'), /\/Subtype\s*\/Image/)
 })
 
 test('PdfGenerationService generatePdf() — renders with an explicitly requested Template id', async () => {
