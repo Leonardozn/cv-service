@@ -1,0 +1,76 @@
+{
+	"fullName": "Camila Rodríguez",
+	"headline": ["Senior Backend Engineer", "Node.js & Cloud Architecture", "8+ years of experience"],
+	"city": "Medellín",
+	"state": "Antioquia",
+	"country": "Colombia",
+	"photo": "woman-profile.jpeg",
+	"profileSummary": "Backend engineer specialized in designing and scaling Node.js services for fintech and HR-tech products. Experienced leading small teams, defining API contracts, and improving system reliability through observability and automated testing.",
+	"skills": ["Node.js", "MongoDB", "Express", "Docker", "AWS", "REST APIs", "CI/CD", "Jest", "Kubernetes", "PostgreSQL", "RabbitMQ", "TypeScript"],
+	"phones": ["+573014567890", "+576044567890"],
+	"contactLinks": [
+		{ "label": "Email", "url": "camila.rodriguez@example.com" },
+		{ "label": "LinkedIn", "url": "linkedin.com/in/camila-rodriguez" },
+		{ "label": "GitHub", "url": "github.com/camila-rodriguez" },
+		{ "label": "Portfolio", "url": "camilarodriguez.dev" }
+	],
+	"education": [
+		{
+			"title": "B.Sc. in Systems Engineering",
+			"institution": "Universidad Nacional de Colombia",
+			"startDate": "2012-01-15",
+			"endDate": "2016-12-10"
+		},
+		{
+			"title": "Specialization in Cloud Computing",
+			"institution": "Universidad EAFIT",
+			"startDate": "2019-02-01",
+			"endDate": "2019-11-30"
+		},
+		{
+			"title": "Diploma in Software Architecture",
+			"institution": "Universidad de los Andes",
+			"startDate": "2023-08-01",
+			"endDate": "2023-12-15"
+		}
+	],
+	"experience": [
+		{
+			"position": "Senior Backend Engineer",
+			"company": "Fintech Solutions S.A.S.",
+			"location": "Medellín, Colombia",
+			"startDate": "2021-04-01",
+			"description": "Led the redesign of the payments microservice, reducing p95 latency by 40%. Mentored two junior engineers and introduced contract testing across the team."
+		},
+		{
+			"position": "Backend Developer",
+			"company": "Talentia HR Tech",
+			"location": "Bogotá, Colombia",
+			"startDate": "2017-06-01",
+			"endDate": "2021-03-15",
+			"description": "Built REST APIs for the recruitment platform and migrated the legacy monolith into modular services."
+		},
+		{
+			"position": "Junior Software Developer",
+			"company": "Softline Dev",
+			"location": "Medellín, Colombia",
+			"startDate": "2015-01-10",
+			"endDate": "2017-05-30",
+			"description": "Developed and maintained internal tooling in Node.js and PHP, and supported the migration of batch jobs to a scheduled microservice."
+		}
+	],
+	"certificate": [
+		{
+			"name": "AWS Certified Solutions Architect – Associate",
+			"date": "2022-05-20"
+		},
+		{
+			"name": "MongoDB Certified Developer",
+			"date": "2020-09-12"
+		},
+		{
+			"name": "Certified Kubernetes Application Developer (CKAD)",
+			"date": "2023-03-08"
+		}
+	]
+}
