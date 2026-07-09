@@ -6,7 +6,7 @@ const styles = StyleSheet.create({
 	page: { flexDirection: 'row', fontSize: 10, fontFamily: 'Helvetica' },
 	sidebar: { width: '32%', backgroundColor: '#2d3748', color: '#ffffff', padding: 20 },
 	main: { width: '68%', padding: 20 },
-	photo: { width: 80, height: 80, borderRadius: 40, marginBottom: 12, alignSelf: 'center' },
+	photo: { width: 130, height: 130, borderRadius: 65, marginBottom: 12, alignSelf: 'center', objectFit: 'cover' },
 	name: { fontSize: 16, fontWeight: 700, marginBottom: 4, textAlign: 'center' },
 	headline: { fontSize: 10, marginBottom: 10, textAlign: 'center' },
 	sidebarSectionTitle: { fontSize: 10, fontWeight: 700, marginTop: 12, marginBottom: 6, textTransform: 'uppercase' },
