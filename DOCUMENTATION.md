@@ -102,14 +102,21 @@ auth-service caído.
 ### Contrato: el cv-client gestiona un Curriculum vía cv-service
 - CRUD estándar de `Curriculum` (`POST/GET/GET :id/PATCH/DELETE /curriculum`). La foto se envía
   como file upload (paquete `file-manager`); se guarda su nombre en `Curriculum.photo`.
-- Requiere `Authorization: Bearer <token>` (middleware `requireAuth`); resultados limitados al
-  usuario autenticado. Máximo un Curriculum por usuario.
+- `POST /curriculum` se comporta como un **"save" idempotente**: como hay a lo sumo un Curriculum
+  por usuario, si ya existe uno lo actualiza en vez de crear un segundo, y responde `200` (no 201)
+  en ambos casos. Cualquier `user` enviado en el cuerpo se ignora: el Curriculum se guarda siempre
+  bajo el id del usuario autenticado.
+- Requiere `Authorization: Bearer <token>` (middleware `requireAuth`); un usuario normal solo opera
+  sobre su propio Curriculum (los resultados se limitan a él, y un Curriculum ajeno se reporta como
+  404, igual que uno inexistente, para no filtrar ids de otros). Un **admin** puede operar sobre
+  cualquier Curriculum (admin override). Máximo un Curriculum por usuario.
 - Respuesta: `{ ..., content: <Curriculum> | [<Curriculum>] }`.
 
 ### Contrato: el cv-client gestiona entradas de Education / Experience / Certificate vía cv-service
 - CRUD estándar de `Education`, `Experience`, `Certificate`; cada entrada referencia su Curriculum
   padre. Requiere `Authorization: Bearer <token>`; se confirma que el Curriculum padre pertenece
-  al usuario autenticado.
+  al usuario autenticado (un admin puede operar sobre entradas de cualquier Curriculum, admin
+  override).
 - Respuesta: `{ ..., content: <Entry> | [<Entry>] }`.
 
 ### Contrato: el cv-client obtiene los catálogos (Skill, Template) vía cv-service
@@ -124,8 +131,10 @@ auth-service caído.
 - Request: `{ template: <id de Template> }` (si se omite, usa el Template activo por defecto). El
   id va en la ruta; el token en el header.
 - Respuesta: el PDF renderizado como descarga binaria (`Content-Type: application/pdf`), on-demand
-  y sin persistir (no hay historial). Error: `content: null` con 401 si la sesión es inválida, o
-  404 si el curriculum no existe o no es de quien llama.
+  y sin persistir (no hay historial). Error (envelope estándar): `content: null` con 401 si la
+  sesión es inválida; 404 si el curriculum no existe o no es de quien llama (un admin puede generar
+  el PDF de cualquiera, admin override); o 400 si el `template` solicitado es un id válido que no
+  corresponde a ningún Template (o no hay Template activo y no se indicó ninguno).
 
 ## 8. Data Models
 
@@ -224,7 +233,9 @@ Catálogo configurable de diseños de CV; hoy un diseño (dos columnas del ejemp
 #### Módulo: CurriculumManagement
 Usa: Curriculum, Education, Experience, Certificate, Skill, (referencia) User
 Responsabilidad: Crear y editar el único curriculum del usuario y sus sub-entradas, limitando
-cada registro a su User dueño (resuelto vía el Protocolo de autenticación).
+cada registro a su User dueño (resuelto vía el Protocolo de autenticación). Un usuario con rol
+admin puede operar sobre el Curriculum (y sus entradas) de cualquier usuario (admin override); un
+usuario normal, solo sobre el suyo.
 
 #### Módulo: Catalog
 Usa: Skill, Template
@@ -265,9 +276,10 @@ Resultado: Catálogo actualizado, o error de autorización.
 #### Proceso: Generar el PDF del CV
 1. Recibe el id del curriculum, el id de Template (o el activo por defecto) y el token.
 2. El middleware valida el token e inyecta el `user`; PdfGeneration confirma que el Curriculum es
-   del User; si no, 404 (no encontrado para este usuario).
+   del User (o que quien llama es admin); si no, 404 (no encontrado para este usuario).
 3. Carga el Curriculum y sus entradas (Education, Experience, Certificate) y resuelve el Template
-   (su `key` indica qué componente de diseño react-pdf usar).
+   (su `key` indica qué componente de diseño react-pdf usar); si el Template solicitado no existe
+   (o no hay Template activo), devuelve 400.
 4. Renderiza el PDF con el componente del Template: sidebar (nombre, headline, foto, localidad
    "city/state/country", teléfonos, contactLinks, habilidades) y columna principal (Perfil,
    Formación, Experiencia, Certificados).
