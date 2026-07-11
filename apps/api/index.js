@@ -68,13 +68,6 @@ server.setStaticPublicFolder(`${envVarsHandler.API_PATH}/files`, staticPath)
 
 const middlewares = []
 
-if (uploadPaths.length > 0) {
-	middlewares.push({
-		includeInPaths: uploadPaths,
-		methods: [fileManager.getMiddleware().any()]
-	})
-}
-
 // Catalog write access is admin-only (read requires only an authenticated user, any role - see
 // routes/skill.js, routes/template.js). A new Skill's automatic registration when a CV is saved
 // goes through SkillService.add() in-process (services/commands/registerNewSkills.js), never
@@ -112,6 +105,17 @@ middlewares.push({
 	],
 	methods: [authMiddleware.requireAuth()]
 })
+
+// File upload runs AFTER requireAuth — pushed last on purpose. setRoutes concatenates matching
+// middlewares in array order, so for a write to '/curriculum' requireAuth runs before the upload
+// multer: an unauthenticated request is rejected (401) before any file is ever written to disk.
+// getUploadMiddleware() also caps size and restricts the mimetype, returning a 400 on violation.
+if (uploadPaths.length > 0) {
+	middlewares.push({
+		includeInPaths: uploadPaths,
+		methods: [fileManager.getUploadMiddleware()]
+	})
+}
 
 server.setRoutes({
 	mainPath: envVarsHandler.API_PATH,
