@@ -24,6 +24,9 @@ const path = require('path')
 const AuthMiddlewareHandler = require('./src/handlers/authMiddleware')
 const authMiddleware = AuthMiddlewareHandler.getInstance()
 
+const RateLimiterHandler = require('./src/handlers/rateLimiter')
+const rateLimiter = RateLimiterHandler.getInstance()
+
 const envVarsHandler = require('./src/handlers/envVariables')
 
 const port = envVarsHandler.API_PORT
@@ -33,6 +36,10 @@ const protocol = isDev ? 'http' : 'https'
 const hostUrl = isDev ? `${host}:${port}` : host
 
 const server = new serverConfiguration()
+
+// Behind Railway/nginx the client IP arrives in X-Forwarded-For; trust the single proxy hop so the
+// rate limiter keys on the real client IP (not the proxy's, which would lump everyone together).
+server.app.set('trust proxy', 1)
 
 server.setSingleSetting(corsPolicy.getPolicy())
 
@@ -65,6 +72,10 @@ uploadPaths = uploadPaths.map(path => ({ name: path.trim(), method: '*' }))
 const staticPath = envVarsHandler.API_UPLOAD_PATH || path.join(process.cwd(), 'api-uploads')
 
 server.setStaticPublicFolder(`${envVarsHandler.API_PATH}/files`, staticPath)
+
+// Global baseline rate limit on the API router (mounted here so /metrics, Swagger UI and the static
+// folder, all registered above, are exempt). A generous per-IP cap that only bites crude abuse.
+server.setSingleSetting(rateLimiter.getBaselineLimiter())
 
 const middlewares = []
 
