@@ -28,6 +28,13 @@ class FileManagerHandler {
 		return this.fileManager.getMiddleware()
 	}
 
+	// Validated upload middleware (size cap + mimetype restriction, 400 on violation), owned by the
+	// file-manager package. Mount it AFTER requireAuth so an unauthenticated request is rejected
+	// before any file is written to disk.
+	getUploadMiddleware() {
+		return this.fileManager.getUploadMiddleware()
+	}
+
 	getProvider() {
 		return this.fileManager.getProvider()
 	}

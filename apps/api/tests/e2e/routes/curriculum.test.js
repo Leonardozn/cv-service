@@ -1,5 +1,8 @@
 const test = require('node:test')
 const assert = require('node:assert/strict')
+const fs = require('node:fs')
+const os = require('node:os')
+const path = require('node:path')
 const { runApp } = require('../../support/run-app')
 
 // Generic request/response wiring for every 'curriculum' route (DB mocked) - this tier checks
@@ -382,5 +385,69 @@ test('curriculum routes — POST /curriculum registers any new skill in the Skil
 		assert.ok(skills.body.content.records.every(skill => skill.active === true))
 	} finally {
 		await app.stop()
+	}
+})
+
+// A tiny PNG signature — the mimetype the fileFilter checks comes from the multipart part's declared
+// Content-Type (the Blob type below), not the bytes, so this content is enough for these tests.
+const PNG_BYTES = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
+
+// Boots the app with the upload middleware mounted and pointed at a throwaway directory, so a test
+// can assert exactly what did (or did not) get written to disk. Passed explicitly rather than read
+// from .env so the test is deterministic even in a fresh checkout with no .env present.
+function uploadEnv(dir, extra = {}) {
+	return {
+		API_UPLOAD_PATH: dir,
+		API_UPLOAD_INCLUDE_PATHS: '/curriculum',
+		API_FILE_FIELDS: 'photo',
+		API_UPLOAD_ALLOWED_FORMATS: 'image/png',
+		...extra
+	}
+}
+
+test('curriculum routes — POST multipart without a token writes no file (auth runs before the upload)', async () => {
+	const uploadDir = fs.mkdtempSync(path.join(os.tmpdir(), 'cv-upload-noauth-'))
+	const app = await runApp(uploadEnv(uploadDir))
+
+	try {
+		const form = new FormData()
+		form.append('fullName', 'Jane Doe')
+		form.append('photo', new Blob([PNG_BYTES], { type: 'image/png' }), 'photo.png')
+
+		const res = await fetch(`${app.baseUrl}${app.path}/curriculum`, { method: 'POST', body: form })
+
+		assert.equal(res.status, 401)
+		// The file must never have been written: requireAuth rejects before the upload multer runs.
+		assert.deepEqual(fs.readdirSync(uploadDir), [])
+	} finally {
+		await app.stop()
+		fs.rmSync(uploadDir, { recursive: true, force: true })
+	}
+})
+
+test('curriculum routes — POST multipart with a disallowed file type returns 400 and writes no file', async () => {
+	const uploadDir = fs.mkdtempSync(path.join(os.tmpdir(), 'cv-upload-badtype-'))
+	const app = await runApp(uploadEnv(uploadDir))
+
+	try {
+		const form = new FormData()
+		form.append('fullName', 'Jane Doe')
+		form.append('photo', new Blob(['not an image'], { type: 'text/plain' }), 'note.txt')
+
+		// A valid token (mocked auth-service resolves 'user-token') means auth passed — so reaching the
+		// upload's type check at all proves the upload now runs after requireAuth, not before it.
+		const res = await fetch(`${app.baseUrl}${app.path}/curriculum`, {
+			method: 'POST',
+			headers: { Authorization: 'Bearer user-token' },
+			body: form
+		})
+		const body = await res.json()
+
+		assert.equal(res.status, 400)
+		assert.equal(body.success, false)
+		assert.deepEqual(fs.readdirSync(uploadDir), [])
+	} finally {
+		await app.stop()
+		fs.rmSync(uploadDir, { recursive: true, force: true })
 	}
 })
