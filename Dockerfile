@@ -24,4 +24,11 @@ RUN npm pkg delete scripts.prepare && npm install --omit=dev
 # Documentation only (Railway injects its own PORT; compose maps this). Matches API_PORT's default.
 EXPOSE 3000
 
+# Catalog assets (e.g. Template preview images) that must ship with the app and stay in sync with
+# it across deploys — as opposed to api-uploads/, which holds user-generated content and is
+# excluded from the image (see .dockerignore) so it can live on a persistent volume instead.
+# docker-entrypoint.sh copies these into API_UPLOAD_PATH on every start (see its comment for why
+# this can't rely on Docker's one-time volume seeding).
+RUN chmod +x docker-entrypoint.sh
+ENTRYPOINT ["./docker-entrypoint.sh"]
 CMD ["npm", "start"]
