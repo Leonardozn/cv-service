@@ -1,13 +1,17 @@
 const { test } = require('node:test')
 const assert = require('node:assert/strict')
 const PdfGeneratorHandler = require('../../../src/handlers/pdfGenerator')
+const { decodePdfText } = require('../../support/decodePdfText')
 
 const SAMPLE_CURRICULUM = {
 	fullName: 'Jane Doe',
-	headline: 'Backend Engineer',
+	headline: ['Backend Engineer'],
 	city: 'Bogotá',
+	state: 'Cundinamarca',
+	country: 'Colombia',
 	profileSummary: '5+ years building distributed systems.',
 	skills: ['Node.js', 'MongoDB'],
+	phones: ['+573007654321', '+573101234567'],
 	contactLinks: [{ label: 'LinkedIn', url: 'linkedin.com/in/janedoe' }],
 	education: [{ title: 'B.Sc. Computer Science', institution: 'Universidad Nacional', startDate: '2016-01-15', endDate: '2020-01-01' }],
 	experience: [{ position: 'Backend Engineer', company: 'Acme Corp', startDate: '2021-03-01', description: 'Built and maintained payment services.' }],
@@ -35,7 +39,7 @@ test('PdfGeneratorHandler renderCurriculum() — renders with empty optional sec
 
 	const buffer = await handler.renderCurriculum({
 		templateKey: 'classic-two-columns',
-		curriculum: { fullName: 'John Roe', headline: 'Developer', profileSummary: 'Summary.' }
+		curriculum: { fullName: 'John Roe', headline: ['Developer'], profileSummary: 'Summary.' }
 	})
 
 	assert.equal(Buffer.isBuffer(buffer), true)
@@ -49,4 +53,62 @@ test('PdfGeneratorHandler renderCurriculum() — throws for an unknown template 
 		() => handler.renderCurriculum({ templateKey: 'does-not-exist', curriculum: SAMPLE_CURRICULUM }),
 		{ message: "Unknown CV template key: 'does-not-exist'." }
 	)
+})
+
+test('PdfGeneratorHandler renderCurriculum() — draws city/state/country joined with "/" and phones as a bulleted list (FR contact info)', async () => {
+	const handler = PdfGeneratorHandler.getInstance()
+
+	const buffer = await handler.renderCurriculum({ templateKey: 'classic-two-columns', curriculum: SAMPLE_CURRICULUM })
+
+	const text = decodePdfText(buffer)
+	assert.match(text, /Location: Bogotá\/Cundinamarca\/Colombia/)
+	assert.match(text, /\* \+573007654321/)
+	assert.match(text, /\* \+573101234567/)
+})
+
+test('PdfGeneratorHandler renderCurriculum() — omits the Contact section entirely when there is no location, phones or contactLinks', async () => {
+	const handler = PdfGeneratorHandler.getInstance()
+
+	const buffer = await handler.renderCurriculum({
+		templateKey: 'classic-two-columns',
+		curriculum: { fullName: 'John Roe', headline: ['Developer'], profileSummary: 'Summary.' }
+	})
+
+	assert.doesNotMatch(decodePdfText(buffer), /Contact/)
+})
+
+test('PdfGeneratorHandler renderCurriculum() — joins multiple headline entries with "|" (FR headline array)', async () => {
+	const handler = PdfGeneratorHandler.getInstance()
+
+	const buffer = await handler.renderCurriculum({
+		templateKey: 'classic-two-columns',
+		curriculum: { fullName: 'Jane Doe', headline: ['Backend Engineer', '5+ years of experience'], profileSummary: 'Summary.' }
+	})
+
+	assert.match(decodePdfText(buffer), /Backend Engineer \| 5\+ years of experience/)
+})
+
+// A repository-loaded Experience/Education carries startDate/endDate as native Date objects (see
+// services/experience.js's _normalizeContractPayload, which calls the Mongoose document's own
+// toObject() rather than re-serializing to JSON) - String(aDateObject) uses Date's
+// locale-dependent toString() (e.g. "Sat Mar 01 2021 00:00:00 GMT...") which drops the year (and
+// can shift the day) once sliced, unlike String(anIsoString). Assert the rendered PDF text still
+// carries the full year for both a native Date and an ISO string input.
+test('PdfGeneratorHandler renderCurriculum() — Experience/Education dates keep the year when the repository returns native Date objects (FR date year)', async () => {
+	const handler = PdfGeneratorHandler.getInstance()
+
+	const buffer = await handler.renderCurriculum({
+		templateKey: 'classic-two-columns',
+		curriculum: {
+			fullName: 'Jane Doe',
+			headline: ['Backend Engineer'],
+			profileSummary: 'Summary.',
+			education: [{ title: 'B.Sc. Computer Science', institution: 'Universidad Nacional', startDate: new Date('2016-01-15T00:00:00.000Z'), endDate: new Date('2020-01-01T00:00:00.000Z') }],
+			experience: [{ position: 'Backend Engineer', company: 'Acme Corp', startDate: new Date('2021-03-01T00:00:00.000Z'), description: 'x' }]
+		}
+	})
+
+	const text = decodePdfText(buffer)
+	assert.match(text, /2016-01-15 - 2020-01-01/)
+	assert.match(text, /2021-03-01 - Present/)
 })

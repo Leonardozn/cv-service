@@ -4,6 +4,7 @@
 	"main": "index.js",
 	"dependencies": {
 		"@react-pdf/renderer": "4.5.1",
+		"luxon": "3.5.0",
 		"react": "19.2.7"
 	}
 }

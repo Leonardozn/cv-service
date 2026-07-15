@@ -38,10 +38,18 @@ class CurriculumModel {
 				required: true
 			},
 			headline: {
-				type: String,
+				type: [String],
 				required: true
 			},
 			city: {
+				type: String,
+				required: true
+			},
+			state: {
+				type: String,
+				required: true
+			},
+			country: {
 				type: String,
 				required: true
 			},
@@ -53,6 +61,9 @@ class CurriculumModel {
 				required: true
 			},
 			skills: {
+				type: [String]
+			},
+			phones: {
 				type: [String]
 			},
 			contactLinks: {

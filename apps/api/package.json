@@ -11,6 +11,7 @@
     "@cv-service/server-configuration": "*",
     "@cv-service/cors-policy": "*",
     "@cv-service/request-logger": "*",
+    "@cv-service/analytics-manager": "*",
     "@cv-service/env-variables": "*",
     "@cv-service/prototypes": "*",
     "@cv-service/handle-response": "*",

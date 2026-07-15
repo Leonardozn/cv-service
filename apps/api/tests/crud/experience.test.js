@@ -20,7 +20,7 @@ function records(curriculumId) {
 }
 
 async function createOwnCurriculum(app) {
-	const res = await app.request('POST', `${app.path}/curriculum`, { fullName: 'Jane Doe', headline: 'Backend Engineer', city: 'Bogotá', profileSummary: 'Summary.' }, OWNER_AUTH)
+	const res = await app.request('POST', `${app.path}/curriculum`, { fullName: 'Jane Doe', headline: ['Backend Engineer'], city: 'Bogotá', state: 'Cundinamarca', country: 'Colombia', profileSummary: 'Summary.' }, OWNER_AUTH)
 	return res.body.content.id
 }
 

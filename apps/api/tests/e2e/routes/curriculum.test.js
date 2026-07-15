@@ -1,5 +1,8 @@
 const test = require('node:test')
 const assert = require('node:assert/strict')
+const fs = require('node:fs')
+const os = require('node:os')
+const path = require('node:path')
 const { runApp } = require('../../support/run-app')
 
 // Generic request/response wiring for every 'curriculum' route (DB mocked) - this tier checks
@@ -17,11 +20,16 @@ const ADMIN_AUTH = { Authorization: 'Bearer admin-token' }
 const SAMPLE = {
 		"user": "fixture-user",
 		"fullName": "sample text",
-		"headline": "sample text",
+		"headline": ["sample text"],
 		"city": "sample text",
+		"state": "sample text",
+		"country": "sample text",
 		"photo": "sample text",
 		"profileSummary": "sample text",
 		"skills": [
+			"sample text"
+		],
+		"phones": [
 			"sample text"
 		],
 		"contactLinks": [
@@ -190,10 +198,10 @@ test('curriculum routes — PATCH lets an admin update a Curriculum owned by som
 	const app = await runApp(seededEnv())
 
 	try {
-		const res = await app.request('PATCH', `${app.path}/curriculum/${SEED_ID}`, { ...SAMPLE, headline: 'Updated by admin' }, ADMIN_AUTH)
+		const res = await app.request('PATCH', `${app.path}/curriculum/${SEED_ID}`, { ...SAMPLE, headline: ['Updated by admin'] }, ADMIN_AUTH)
 
 		assert.equal(res.status, 200)
-		assert.equal(res.body.content.headline, 'Updated by admin')
+		assert.deepEqual(res.body.content.headline, ['Updated by admin'])
 	} finally {
 		await app.stop()
 	}
@@ -325,6 +333,7 @@ test('curriculum routes — POST :id/generate-pdf renders a real PDF binary usin
 
 		assert.equal(res.status, 200)
 		assert.equal(res.headers.get('content-type'), 'application/pdf')
+		assert.equal(res.headers.get('content-disposition'), 'attachment; filename="curriculum.pdf"')
 		assert.equal(buffer.subarray(0, 5).toString('latin1'), '%PDF-')
 	} finally {
 		await app.stop()
@@ -352,10 +361,10 @@ test('curriculum routes — POST /curriculum twice with the same user updates it
 
 	try {
 		const first = await app.request('POST', `${app.path}/curriculum`, SAMPLE, OWNER_AUTH)
-		const second = await app.request('POST', `${app.path}/curriculum`, { ...SAMPLE, headline: 'Updated headline' }, OWNER_AUTH)
+		const second = await app.request('POST', `${app.path}/curriculum`, { ...SAMPLE, headline: ['Updated headline'] }, OWNER_AUTH)
 
 		assert.equal(second.body.content.id, first.body.content.id)
-		assert.equal(second.body.content.headline, 'Updated headline')
+		assert.deepEqual(second.body.content.headline, ['Updated headline'])
 
 		const list = await app.request('GET', `${app.path}/curriculum`, undefined, OWNER_AUTH)
 		assert.equal(list.body.content.count, 1)
@@ -370,11 +379,75 @@ test('curriculum routes — POST /curriculum registers any new skill in the Skil
 	try {
 		await app.request('POST', `${app.path}/curriculum`, { ...SAMPLE, skills: ['Node.js', 'MongoDB'] }, OWNER_AUTH)
 
-		const skills = await app.request('GET', `${app.path}/skill`)
+		const skills = await app.request('GET', `${app.path}/skill`, undefined, OWNER_AUTH)
 		assert.equal(skills.body.content.count, 2)
 		assert.deepEqual(skills.body.content.records.map(skill => skill.name).sort(), ['MongoDB', 'Node.js'])
 		assert.ok(skills.body.content.records.every(skill => skill.active === true))
 	} finally {
 		await app.stop()
+	}
+})
+
+// A tiny PNG signature — the mimetype the fileFilter checks comes from the multipart part's declared
+// Content-Type (the Blob type below), not the bytes, so this content is enough for these tests.
+const PNG_BYTES = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
+
+// Boots the app with the upload middleware mounted and pointed at a throwaway directory, so a test
+// can assert exactly what did (or did not) get written to disk. Passed explicitly rather than read
+// from .env so the test is deterministic even in a fresh checkout with no .env present.
+function uploadEnv(dir, extra = {}) {
+	return {
+		API_UPLOAD_PATH: dir,
+		API_UPLOAD_INCLUDE_PATHS: '/curriculum',
+		API_FILE_FIELDS: 'photo',
+		API_UPLOAD_ALLOWED_FORMATS: 'image/png',
+		...extra
+	}
+}
+
+test('curriculum routes — POST multipart without a token writes no file (auth runs before the upload)', async () => {
+	const uploadDir = fs.mkdtempSync(path.join(os.tmpdir(), 'cv-upload-noauth-'))
+	const app = await runApp(uploadEnv(uploadDir))
+
+	try {
+		const form = new FormData()
+		form.append('fullName', 'Jane Doe')
+		form.append('photo', new Blob([PNG_BYTES], { type: 'image/png' }), 'photo.png')
+
+		const res = await fetch(`${app.baseUrl}${app.path}/curriculum`, { method: 'POST', body: form })
+
+		assert.equal(res.status, 401)
+		// The file must never have been written: requireAuth rejects before the upload multer runs.
+		assert.deepEqual(fs.readdirSync(uploadDir), [])
+	} finally {
+		await app.stop()
+		fs.rmSync(uploadDir, { recursive: true, force: true })
+	}
+})
+
+test('curriculum routes — POST multipart with a disallowed file type returns 400 and writes no file', async () => {
+	const uploadDir = fs.mkdtempSync(path.join(os.tmpdir(), 'cv-upload-badtype-'))
+	const app = await runApp(uploadEnv(uploadDir))
+
+	try {
+		const form = new FormData()
+		form.append('fullName', 'Jane Doe')
+		form.append('photo', new Blob(['not an image'], { type: 'text/plain' }), 'note.txt')
+
+		// A valid token (mocked auth-service resolves 'user-token') means auth passed — so reaching the
+		// upload's type check at all proves the upload now runs after requireAuth, not before it.
+		const res = await fetch(`${app.baseUrl}${app.path}/curriculum`, {
+			method: 'POST',
+			headers: { Authorization: 'Bearer user-token' },
+			body: form
+		})
+		const body = await res.json()
+
+		assert.equal(res.status, 400)
+		assert.equal(body.success, false)
+		assert.deepEqual(fs.readdirSync(uploadDir), [])
+	} finally {
+		await app.stop()
+		fs.rmSync(uploadDir, { recursive: true, force: true })
 	}
 })

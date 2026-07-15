@@ -1,0 +1,11 @@
+{
+	"name": "@cv-service/rate-limiter",
+	"version": "1.0.0",
+	"description": "Request rate limiting.",
+	"main": "index",
+	"dependencies": {
+		"express-rate-limit": "7.5.1",
+		"@cv-service/handle-errors": "*",
+		"@cv-service/handle-response": "*"
+	}
+}

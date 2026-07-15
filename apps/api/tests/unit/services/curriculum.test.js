@@ -18,11 +18,16 @@ const CurriculumService = require('../../../src/services/curriculum')
 const SAMPLE = {
 		"user": "sample text",
 		"fullName": "sample text",
-		"headline": "sample text",
+		"headline": ["sample text"],
 		"city": "sample text",
+		"state": "sample text",
+		"country": "sample text",
 		"photo": "sample text",
 		"profileSummary": "sample text",
 		"skills": [
+			"sample text"
+		],
+		"phones": [
 			"sample text"
 		],
 		"contactLinks": [
@@ -142,10 +147,10 @@ test('curriculum service update() — patching an unrelated field preserves the 
 	seed()
 	const service = CurriculumService.getInstance()
 
-	const result = await service.update({ id: SEED_ID, body: { headline: 'Updated headline' } })
+	const result = await service.update({ id: SEED_ID, body: { headline: ['Updated headline'] } })
 
 	assert.equal(result.photo, SAMPLE.photo)
-	assert.equal(result.headline, 'Updated headline')
+	assert.deepEqual(result.headline, ['Updated headline'])
 	const storage = MockFileManagerHandler.getInstance().getProvider()
 	assert.deepEqual(storage.deleted, [])
 })

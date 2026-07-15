@@ -12,7 +12,7 @@ test('AssertCurriculumAccess — returns the Curriculum when the caller is its o
 	const curriculumService = CurriculumService.getInstance()
 	const command = AssertCurriculumAccess.getInstance()
 	const created = await curriculumService.add({
-		body: { user: 'user-1', fullName: 'Jane Doe', headline: 'Backend Engineer', city: 'Bogotá', profileSummary: 'Summary.' }
+		body: { user: 'user-1', fullName: 'Jane Doe', headline: ['Backend Engineer'], city: 'Bogotá', state: 'Cundinamarca', country: 'Colombia', profileSummary: 'Summary.' }
 	})
 
 	const result = await command.execute({ curriculumService, curriculumId: created.id, user: { id: 'user-1', role: 'user' } })
@@ -24,7 +24,7 @@ test('AssertCurriculumAccess — returns the Curriculum when the caller is an ad
 	const curriculumService = CurriculumService.getInstance()
 	const command = AssertCurriculumAccess.getInstance()
 	const created = await curriculumService.add({
-		body: { user: 'user-1', fullName: 'Jane Doe', headline: 'Backend Engineer', city: 'Bogotá', profileSummary: 'Summary.' }
+		body: { user: 'user-1', fullName: 'Jane Doe', headline: ['Backend Engineer'], city: 'Bogotá', state: 'Cundinamarca', country: 'Colombia', profileSummary: 'Summary.' }
 	})
 
 	const result = await command.execute({ curriculumService, curriculumId: created.id, user: { id: 'admin-1', role: 'admin' } })
@@ -36,7 +36,7 @@ test('AssertCurriculumAccess — throws a NotFoundError when the Curriculum belo
 	const curriculumService = CurriculumService.getInstance()
 	const command = AssertCurriculumAccess.getInstance()
 	const created = await curriculumService.add({
-		body: { user: 'user-1', fullName: 'Jane Doe', headline: 'Backend Engineer', city: 'Bogotá', profileSummary: 'Summary.' }
+		body: { user: 'user-1', fullName: 'Jane Doe', headline: ['Backend Engineer'], city: 'Bogotá', state: 'Cundinamarca', country: 'Colombia', profileSummary: 'Summary.' }
 	})
 
 	await assert.rejects(

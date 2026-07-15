@@ -14,14 +14,31 @@ const RequestLoggerHandler = require('./src/handlers/requestLogger')
 const requestLogger = RequestLoggerHandler.getInstance()
 const modes = requestLogger.getModes()
 
+const AnalyticsManagerHandler = require('./src/handlers/analyticsManager')
+const analytics = AnalyticsManagerHandler.getInstance()
+
 const FileManagerHandler = require('./src/handlers/fileManager')
-const fileManager = FileManagerHandler.getInstance()
 const path = require('path')
 
 const AuthMiddlewareHandler = require('./src/handlers/authMiddleware')
 const authMiddleware = AuthMiddlewareHandler.getInstance()
 
+const RateLimiterHandler = require('./src/handlers/rateLimiter')
+const rateLimiter = RateLimiterHandler.getInstance()
+
+const SecurityHeadersHandler = require('./src/handlers/securityHeaders')
+const securityHeaders = SecurityHeadersHandler.getInstance()
+
 const envVarsHandler = require('./src/handlers/envVariables')
+
+// Uploads folder anchored to the service root (this file lives at apps/api/index.js), NOT
+// process.cwd(), so it's deterministic regardless of where the process is launched from. This one
+// value is the single source of truth: it's both served as static (below) and handed to
+// file-manager for writes, so reads and writes can never point at different folders.
+const serviceRoot = path.resolve(__dirname, '..', '..')
+const uploadPath = envVarsHandler.API_UPLOAD_PATH || path.join(serviceRoot, 'api-uploads')
+
+const fileManager = FileManagerHandler.getInstance({ uploadPath })
 
 const port = envVarsHandler.API_PORT
 const host = envVarsHandler.API_HOST
@@ -31,11 +48,24 @@ const hostUrl = isDev ? `${host}:${port}` : host
 
 const server = new serverConfiguration()
 
+// Behind Railway/nginx the client IP arrives in X-Forwarded-For; trust the single proxy hop so the
+// rate limiter keys on the real client IP (not the proxy's, which would lump everyone together).
+server.app.set('trust proxy', 1)
+
+// Security response headers first, so every response (API, Swagger UI, static files) carries them.
+server.setSingleSetting(securityHeaders.getMiddleware())
+
 server.setSingleSetting(corsPolicy.getPolicy())
 
 server.setRequestBodyOptions({ limit: '10mb' })
 
 server.setSingleSetting(requestLogger.getLogger(modes.DEV))
+
+// Records HTTP RED metrics for every request; must sit before the routers so it wraps them all.
+server.setSingleSetting(analytics.getMiddleware())
+
+// Exposes GET /metrics for Prometheus to scrape (public, outside the API router).
+analytics.setupMetricsEndpoint(server.app)
 
 const DocumentationConfigHandler = require('./src/handlers/documentationConfig')
 const documentationHandler = DocumentationConfigHandler.getInstance()
@@ -53,23 +83,18 @@ documentationHandler.setupSwaggerUI(server.app, '/api-docs')
 let uploadPaths = envVarsHandler.API_UPLOAD_INCLUDE_PATHS ? envVarsHandler.API_UPLOAD_INCLUDE_PATHS.split(',') : []
 uploadPaths = uploadPaths.map(path => ({ name: path.trim(), method: '*' }))
 
-const staticPath = envVarsHandler.API_UPLOAD_PATH || path.join(process.cwd(), 'api-uploads')
+server.setStaticPublicFolder(`${envVarsHandler.API_PATH}/files`, uploadPath)
 
-server.setStaticPublicFolder(`${envVarsHandler.API_PATH}/files`, staticPath)
+// Global baseline rate limit on the API router (mounted here so /metrics, Swagger UI and the static
+// folder, all registered above, are exempt). A generous per-IP cap that only bites crude abuse.
+server.setSingleSetting(rateLimiter.getBaselineLimiter())
 
 const middlewares = []
 
-if (uploadPaths.length > 0) {
-	middlewares.push({
-		includeInPaths: uploadPaths,
-		methods: [fileManager.getMiddleware().any()]
-	})
-}
-
-// Catalog write access is admin-only (read stays public - see routes/skill.js, routes/template.js).
-// A new Skill's automatic registration when a CV is saved goes through SkillService.add()
-// in-process (services/commands/registerNewSkills.js), never through this HTTP route, so it's
-// unaffected by this gate.
+// Catalog write access is admin-only (read requires only an authenticated user, any role - see
+// routes/skill.js, routes/template.js). A new Skill's automatic registration when a CV is saved
+// goes through SkillService.add() in-process (services/commands/registerNewSkills.js), never
+// through this HTTP route, so it's unaffected by this gate.
 const adminWriteMethods = ['post', 'put', 'patch', 'delete']
 middlewares.push({
 	includeInPaths: [
@@ -77,6 +102,15 @@ middlewares.push({
 		...adminWriteMethods.map(method => ({ name: '/template', method }))
 	],
 	methods: [authMiddleware.requireRole('admin')]
+})
+
+const catalogReadMethods = ['get']
+middlewares.push({
+	includeInPaths: [
+		...catalogReadMethods.map(method => ({ name: '/skill', method })),
+		...catalogReadMethods.map(method => ({ name: '/template', method }))
+	],
+	methods: [authMiddleware.requireAuth()]
 })
 
 // Curriculum/Education/Experience/Certificate (CRUD and generate-pdf, since '/curriculum' matches
@@ -94,6 +128,17 @@ middlewares.push({
 	],
 	methods: [authMiddleware.requireAuth()]
 })
+
+// File upload runs AFTER requireAuth — pushed last on purpose. setRoutes concatenates matching
+// middlewares in array order, so for a write to '/curriculum' requireAuth runs before the upload
+// multer: an unauthenticated request is rejected (401) before any file is ever written to disk.
+// getUploadMiddleware() also caps size and restricts the mimetype, returning a 400 on violation.
+if (uploadPaths.length > 0) {
+	middlewares.push({
+		includeInPaths: uploadPaths,
+		methods: [fileManager.getUploadMiddleware()]
+	})
+}
 
 server.setRoutes({
 	mainPath: envVarsHandler.API_PATH,

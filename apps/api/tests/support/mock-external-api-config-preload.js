@@ -14,11 +14,13 @@
 //    so a test only needs to choose which fake token to send.
 const Module = require('node:module')
 
+// Mirrors auth-service's real user contract, which exposes only `_id` (never `id`) - see
+// auth-middleware's _normalizeUser(), which derives req.user.id from this at the boundary.
 const FIXED_USERS_BY_TOKEN = {
-	'admin-token': { id: 'fixture-admin', role: 'admin' },
-	'user-token': { id: 'fixture-user', role: 'user' },
-	'other-user-token': { id: 'fixture-other-user', role: 'user' },
-	'third-user-token': { id: 'fixture-third-user', role: 'user' }
+	'admin-token': { _id: 'fixture-admin', role: 'admin' },
+	'user-token': { _id: 'fixture-user', role: 'user' },
+	'other-user-token': { _id: 'fixture-other-user', role: 'user' },
+	'third-user-token': { _id: 'fixture-third-user', role: 'user' }
 }
 
 class MockAxiosInstance {

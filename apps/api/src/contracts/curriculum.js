@@ -17,9 +17,12 @@ class CurriculumContract {
 			fullName: true,
 			headline: true,
 			city: true,
+			state: true,
+			country: true,
 			photo: true,
 			profileSummary: true,
 			skills: true,
+			phones: true,
 			contactLinks: [{
 				label: true,
 				url: true,

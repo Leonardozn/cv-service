@@ -17,11 +17,16 @@ const RECORD_USERS = ['fixture-user', 'fixture-other-user', 'fixture-third-user'
 const RECORDS = [
 		{
 			"fullName": "sample text",
-			"headline": "sample text",
+			"headline": ["sample text"],
 			"city": "sample text",
+			"state": "sample text",
+			"country": "sample text",
 			"photo": "sample text",
 			"profileSummary": "sample text",
 			"skills": [
+				"sample text"
+			],
+			"phones": [
 				"sample text"
 			],
 			"contactLinks": [
@@ -33,11 +38,16 @@ const RECORDS = [
 		},
 		{
 			"fullName": "sample text",
-			"headline": "sample text",
+			"headline": ["sample text"],
 			"city": "sample text",
+			"state": "sample text",
+			"country": "sample text",
 			"photo": "sample text",
 			"profileSummary": "sample text",
 			"skills": [
+				"sample text"
+			],
+			"phones": [
 				"sample text"
 			],
 			"contactLinks": [
@@ -49,11 +59,16 @@ const RECORDS = [
 		},
 		{
 			"fullName": "sample text",
-			"headline": "sample text",
+			"headline": ["sample text"],
 			"city": "sample text",
+			"state": "sample text",
+			"country": "sample text",
 			"photo": "sample text",
 			"profileSummary": "sample text",
 			"skills": [
+				"sample text"
+			],
+			"phones": [
 				"sample text"
 			],
 			"contactLinks": [

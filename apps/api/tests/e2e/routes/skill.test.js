@@ -4,8 +4,9 @@ const { runApp } = require('../../support/run-app')
 
 // Generic request/response wiring for every 'skill' route (DB mocked) - this tier checks
 // the envelope and routing, not exhaustive field coverage (that's tests/crud/skill.test.js).
-// Writes require the admin role (see index.js's middlewares wiring); auth-service itself is
-// mocked (mock-external-api-config-preload.js), which resolves these fixed tokens deterministically.
+// Every route requires an authenticated user (see index.js's middlewares wiring); reading
+// (list/get by id) accepts any role, writing requires admin specifically. auth-service itself
+// is mocked (mock-external-api-config-preload.js), which resolves these fixed tokens deterministically.
 const ADMIN_AUTH = { Authorization: 'Bearer admin-token' }
 const USER_AUTH = { Authorization: 'Bearer user-token' }
 
@@ -64,14 +65,26 @@ test('skill routes — POST returns 403 when the caller is not admin', async () 
 	}
 })
 
-test('skill routes — GET by id returns the seeded record (public, no token needed)', async () => {
+test('skill routes — GET by id returns the seeded record for any authenticated role', async () => {
+	const app = await runApp(seededEnv())
+
+	try {
+		const res = await app.request('GET', `${app.path}/skill/${SEED_ID}`, undefined, USER_AUTH)
+
+		assert.equal(res.status, 200)
+		assert.deepEqual(res.body.content, { ...SAMPLE, id: SEED_ID })
+	} finally {
+		await app.stop()
+	}
+})
+
+test('skill routes — GET by id returns 401 without a token', async () => {
 	const app = await runApp(seededEnv())
 
 	try {
 		const res = await app.request('GET', `${app.path}/skill/${SEED_ID}`)
 
-		assert.equal(res.status, 200)
-		assert.deepEqual(res.body.content, { ...SAMPLE, id: SEED_ID })
+		assert.equal(res.status, 401)
 	} finally {
 		await app.stop()
 	}
@@ -81,7 +94,7 @@ test('skill routes — GET by id returns 400 when the record does not exist', as
 	const app = await runApp()
 
 	try {
-		const res = await app.request('GET', `${app.path}/skill/${SEED_ID}`)
+		const res = await app.request('GET', `${app.path}/skill/${SEED_ID}`, undefined, USER_AUTH)
 
 		assert.equal(res.status, 400)
 		assert.equal(res.body.success, false)
@@ -90,15 +103,27 @@ test('skill routes — GET by id returns 400 when the record does not exist', as
 	}
 })
 
-test('skill routes — GET list returns the envelope shape (public, no token needed)', async () => {
+test('skill routes — GET list returns the envelope shape for any authenticated role', async () => {
+	const app = await runApp(seededEnv())
+
+	try {
+		const res = await app.request('GET', `${app.path}/skill`, undefined, USER_AUTH)
+
+		assert.equal(res.status, 200)
+		assert.equal(res.body.content.count, 1)
+		assert.deepEqual(res.body.content.records, [{ ...SAMPLE, id: SEED_ID }])
+	} finally {
+		await app.stop()
+	}
+})
+
+test('skill routes — GET list returns 401 without a token', async () => {
 	const app = await runApp(seededEnv())
 
 	try {
 		const res = await app.request('GET', `${app.path}/skill`)
 
-		assert.equal(res.status, 200)
-		assert.equal(res.body.content.count, 1)
-		assert.deepEqual(res.body.content.records, [{ ...SAMPLE, id: SEED_ID }])
+		assert.equal(res.status, 401)
 	} finally {
 		await app.stop()
 	}
@@ -137,7 +162,7 @@ test('skill routes — DELETE removes the seeded record when the caller is admin
 		const del = await app.request('DELETE', `${app.path}/skill/${SEED_ID}`, undefined, ADMIN_AUTH)
 		assert.equal(del.status, 200)
 
-		const after = await app.request('GET', `${app.path}/skill/${SEED_ID}`)
+		const after = await app.request('GET', `${app.path}/skill/${SEED_ID}`, undefined, ADMIN_AUTH)
 		assert.equal(after.status, 400)
 	} finally {
 		await app.stop()

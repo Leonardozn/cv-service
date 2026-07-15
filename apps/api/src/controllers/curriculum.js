@@ -126,7 +126,10 @@ class CurriculumController {
 		try {
 			const buffer = await this.pdfGenerationService.generatePdf({ id: req.params.id, body: req.body, user: req.user })
 
-			res.status(200).set('Content-Type', 'application/pdf').send(buffer)
+			res.status(200)
+				.set('Content-Type', 'application/pdf')
+				.set('Content-Disposition', 'attachment; filename="curriculum.pdf"')
+				.send(buffer)
 		} catch (error) {
 			console.error(error)
 			const response = this.handleResponseHandler.buildResponse(error)

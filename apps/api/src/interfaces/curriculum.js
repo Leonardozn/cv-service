@@ -49,11 +49,21 @@ class CurriculumInterfaces {
 		this.createInterface = this.dataValidatorHandler.validate({
 			user: { type: this.types.string },
 			fullName: { type: this.types.string },
-			headline: { type: this.types.string },
+			headline: {
+				type: this.types.array,
+				contentType: this.types.string
+			},
 			city: { type: this.types.string },
+			state: { type: this.types.string },
+			country: { type: this.types.string },
 			photo: { type: this.types.string, optional: true },
 			profileSummary: { type: this.types.string },
 			skills: {
+				type: this.types.array,
+				contentType: this.types.string,
+				optional: true
+			},
+			phones: {
 				type: this.types.array,
 				contentType: this.types.string,
 				optional: true
@@ -72,11 +82,22 @@ class CurriculumInterfaces {
 		this.updateInterface = this.dataValidatorHandler.validate({
 			user: { type: this.types.string, optional: true },
 			fullName: { type: this.types.string, optional: true },
-			headline: { type: this.types.string, optional: true },
+			headline: {
+				type: this.types.array,
+				contentType: this.types.string,
+				optional: true
+			},
 			city: { type: this.types.string, optional: true },
+			state: { type: this.types.string, optional: true },
+			country: { type: this.types.string, optional: true },
 			photo: { type: this.types.string, optional: true },
 			profileSummary: { type: this.types.string, optional: true },
 			skills: {
+				type: this.types.array,
+				contentType: this.types.string,
+				optional: true
+			},
+			phones: {
 				type: this.types.array,
 				contentType: this.types.string,
 				optional: true
@@ -98,11 +119,22 @@ class CurriculumInterfaces {
 			_id: { type: this.types.objectId, optional: true, transform: true, allowAdvance: true },
 			user: { type: this.types.string, optional: true, transform: true, allowAdvance: true },
 			fullName: { type: this.types.string, optional: true, transform: true, allowAdvance: true },
-			headline: { type: this.types.string, optional: true, transform: true, allowAdvance: true },
+			headline: {
+				type: this.types.array,
+				contentType: this.types.string,
+				optional: true
+			},
 			city: { type: this.types.string, optional: true, transform: true, allowAdvance: true },
+			state: { type: this.types.string, optional: true, transform: true, allowAdvance: true },
+			country: { type: this.types.string, optional: true, transform: true, allowAdvance: true },
 			photo: { type: this.types.string, optional: true, transform: true, allowAdvance: true },
 			profileSummary: { type: this.types.string, optional: true, transform: true, allowAdvance: true },
 			skills: {
+				type: this.types.array,
+				contentType: this.types.string,
+				optional: true
+			},
+			phones: {
 				type: this.types.array,
 				contentType: this.types.string,
 				optional: true
@@ -124,11 +156,24 @@ class CurriculumInterfaces {
 			_id: { type: this.types.string, optional: true, isVirtual: true },
 			user: { type: this.types.string, optional: true, isVirtual: true },
 			fullName: { type: this.types.string, optional: true, isVirtual: true },
-			headline: { type: this.types.string, optional: true, isVirtual: true },
+			headline: {
+				type: this.types.array,
+				contentType: this.types.string,
+				optional: true,
+				canBeVirtual: true
+			},
 			city: { type: this.types.string, optional: true, isVirtual: true },
+			state: { type: this.types.string, optional: true, isVirtual: true },
+			country: { type: this.types.string, optional: true, isVirtual: true },
 			photo: { type: this.types.string, optional: true, isVirtual: true },
 			profileSummary: { type: this.types.string, optional: true, isVirtual: true },
 			skills: {
+				type: this.types.array,
+				contentType: this.types.string,
+				optional: true,
+				canBeVirtual: true
+			},
+			phones: {
 				type: this.types.array,
 				contentType: this.types.string,
 				optional: true,
