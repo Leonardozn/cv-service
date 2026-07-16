@@ -1,6 +1,6 @@
-const fs = require('fs/promises')
 const path = require('path')
 const envVariables = require('../../handlers/envVariables')
+const FileManagerHandler = require('../../handlers/fileManager')
 
 class ResolveCurriculumPhoto {
 	/**
@@ -23,7 +23,9 @@ class ResolveCurriculumPhoto {
 
 		const destinationPath = envVariables.API_UPLOAD_PATH || path.join(process.cwd(), 'api-uploads')
 		try {
-			return await fs.readFile(path.join(destinationPath, photo))
+			const storageProvider = FileManagerHandler.getInstance().getProvider()
+			const buffer = await storageProvider.getFile(photo, destinationPath)
+			return buffer || undefined
 		} catch {
 			return undefined
 		}

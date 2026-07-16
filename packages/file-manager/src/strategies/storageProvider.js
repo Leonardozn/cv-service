@@ -18,6 +18,17 @@ class StorageProvider {
 	async deleteFile(filename, destinationPath) {
 		throw new Error('Method not implemented')
 	}
+
+	/**
+	 * Read a stored file's contents.
+	 * @param {string} filename - The name of the file
+	 * @param {string} destinationPath - The path where the file is stored (ignored by strategies
+	 *   that don't need it, e.g. a bucket where the location is already fixed in its own config)
+	 * @returns {Promise<Buffer|null>} The file's contents, or null if it doesn't exist
+	 */
+	async getFile(filename, destinationPath) {
+		throw new Error('Method not implemented')
+	}
 }
 
 module.exports = StorageProvider
