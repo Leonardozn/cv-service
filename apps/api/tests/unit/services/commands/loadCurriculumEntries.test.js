@@ -42,6 +42,29 @@ test('LoadCurriculumEntries — loads only the given Curriculum\'s Education/Exp
 	assert.equal(result.certificate[0].name, 'AWS')
 })
 
+test('LoadCurriculumEntries — orders Education/Experience by startDate and Certificate by date, most recent first', async () => {
+	const repo = MockRepository.getInstance()
+	const now = new Date().toISOString()
+	repo._collection('education').set('e-old', { _id: 'e-old', curriculum: CURRICULUM_ID, title: 'B.Sc.', institution: 'U', startDate: '2016-01-01', createdAt: now, updatedAt: now })
+	repo._collection('education').set('e-new', { _id: 'e-new', curriculum: CURRICULUM_ID, title: 'M.Sc.', institution: 'U', startDate: '2021-01-01', createdAt: now, updatedAt: now })
+	repo._collection('experience').set('x-old', { _id: 'x-old', curriculum: CURRICULUM_ID, position: 'Junior Dev', company: 'Acme', startDate: '2018-01-01', description: 'Work', createdAt: now, updatedAt: now })
+	repo._collection('experience').set('x-new', { _id: 'x-new', curriculum: CURRICULUM_ID, position: 'Senior Dev', company: 'Acme', startDate: '2022-01-01', description: 'Work', createdAt: now, updatedAt: now })
+	repo._collection('certificate').set('c-old', { _id: 'c-old', curriculum: CURRICULUM_ID, name: 'AWS', date: '2019-01-01', createdAt: now, updatedAt: now })
+	repo._collection('certificate').set('c-new', { _id: 'c-new', curriculum: CURRICULUM_ID, name: 'GCP', date: '2023-01-01', createdAt: now, updatedAt: now })
+
+	const command = LoadCurriculumEntries.getInstance()
+	const result = await command.execute({
+		educationService: EducationService.getInstance(),
+		experienceService: ExperienceService.getInstance(),
+		certificateService: CertificateService.getInstance(),
+		curriculumId: CURRICULUM_ID
+	})
+
+	assert.deepEqual(result.education.map(e => e.title), ['M.Sc.', 'B.Sc.'])
+	assert.deepEqual(result.experience.map(e => e.position), ['Senior Dev', 'Junior Dev'])
+	assert.deepEqual(result.certificate.map(c => c.name), ['GCP', 'AWS'])
+})
+
 test('LoadCurriculumEntries — returns empty arrays when the Curriculum has no entries', async () => {
 	const command = LoadCurriculumEntries.getInstance()
 
