@@ -26,6 +26,13 @@ class LocalStorageStrategy extends StorageProvider {
 			fs.unlinkSync(oldFilePath)
 		}
 	}
+
+	async getFile(filename, destinationPath) {
+		if (!filename) return null
+		const filePath = path.join(destinationPath, filename)
+		if (!fs.existsSync(filePath)) return null
+		return fs.readFileSync(filePath)
+	}
 }
 
 module.exports = LocalStorageStrategy

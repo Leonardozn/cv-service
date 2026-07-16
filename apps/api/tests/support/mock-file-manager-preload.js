@@ -22,6 +22,10 @@ class MockStorageProvider {
 	async deleteFile(filename, destinationPath) {
 		this.deleted.push({ filename, destinationPath })
 	}
+
+	async getFile(filename) {
+		return this.files?.[filename] || null
+	}
 }
 
 class MockFileManagerHandler {
@@ -52,9 +56,12 @@ class MockFileManagerHandler {
 	}
 }
 
+// Matched by request string, not resolved path - services/*.js requires '../handlers/fileManager',
+// while services/commands/*.js (one directory deeper, e.g. resolveCurriculumPhoto.js) requires
+// '../../handlers/fileManager'. Both must resolve to the same mock instance.
 const originalLoad = Module._load
 Module._load = function (request, parent, isMain) {
-	if (request === '../handlers/fileManager') return MockFileManagerHandler
+	if (request === '../handlers/fileManager' || request === '../../handlers/fileManager') return MockFileManagerHandler
 	return originalLoad.apply(this, arguments)
 }
 

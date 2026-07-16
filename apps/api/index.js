@@ -37,6 +37,7 @@ const envVarsHandler = require('./src/handlers/envVariables')
 // file-manager for writes, so reads and writes can never point at different folders.
 const serviceRoot = path.resolve(__dirname, '..', '..')
 const uploadPath = envVarsHandler.API_UPLOAD_PATH || path.join(serviceRoot, 'api-uploads')
+const isS3Storage = typeof uploadPath === 'string' && uploadPath.startsWith('s3://')
 
 const fileManager = FileManagerHandler.getInstance({ uploadPath })
 
@@ -83,7 +84,23 @@ documentationHandler.setupSwaggerUI(server.app, '/api-docs')
 let uploadPaths = envVarsHandler.API_UPLOAD_INCLUDE_PATHS ? envVarsHandler.API_UPLOAD_INCLUDE_PATHS.split(',') : []
 uploadPaths = uploadPaths.map(path => ({ name: path.trim(), method: '*' }))
 
-server.setStaticPublicFolder(`${envVarsHandler.API_PATH}/files`, uploadPath)
+if (isS3Storage) {
+	// A bucket has no local folder express.static could serve - proxy each read through the
+	// same storage strategy writes already go through, streaming the object back as the response.
+	server.app.get(`${envVarsHandler.API_PATH}/files/*`, async (req, res) => {
+		const filename = req.params[0]
+		try {
+			const buffer = await fileManager.getProvider().getFile(filename)
+			if (!buffer) return res.status(404).end()
+			res.type(path.extname(filename)).send(buffer)
+		} catch (error) {
+			console.error('Failed to read file from bucket:', error)
+			res.status(500).end()
+		}
+	})
+} else {
+	server.setStaticPublicFolder(`${envVarsHandler.API_PATH}/files`, uploadPath)
+}
 
 // Global baseline rate limit on the API router (mounted here so /metrics, Swagger UI and the static
 // folder, all registered above, are exempt). A generous per-IP cap that only bites crude abuse.
