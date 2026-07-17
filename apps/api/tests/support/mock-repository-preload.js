@@ -145,8 +145,15 @@ class MockRepository {
 		let records = [...this._collection(schemaName).values()].filter(r => matches(r, config.query || {}))
 		const count = records.length
 
-		const sort = toObject(config.sort)
-		for (const [field, direction] of Object.entries(sort)) {
+		// Two shapes reach here in practice: internal command/service code sends { field, type }
+		// (see BuildPipeline.sort() in packages/entity-queries), while an HTTP `sort[field]=value`
+		// query string parses to mongoose's native { <field>: <direction> } shape and is forwarded
+		// as-is (no transform layer exists between req.query.sort and repository.list()).
+		const sortConfig = toObject(config.sort)
+		const sortEntries = sortConfig.field && sortConfig.type
+			? [[sortConfig.field, sortConfig.type]]
+			: Object.entries(sortConfig)
+		for (const [field, direction] of sortEntries) {
 			const dir = Number(direction) < 0 ? -1 : 1
 			records = records.sort((a, b) => (a[field] > b[field] ? 1 : a[field] < b[field] ? -1 : 0) * dir)
 		}

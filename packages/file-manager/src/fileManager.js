@@ -6,6 +6,7 @@ const path = require('path')
 const fs = require('fs')
 
 const LocalStorageStrategy = require('./strategies/localStorageStrategy')
+const S3StorageStrategy = require('./strategies/s3StorageStrategy')
 
 const DEFAULT_MAX_FILE_SIZE = 5242880 // 5 MB
 const DEFAULT_ALLOWED_FORMATS = 'image/jpeg,image/png,image/webp'
@@ -48,8 +49,23 @@ class FileManager {
 		let storage
 
 		if (isS3) {
-			// FIXME: Implementation of S3 strategy will go here
-			throw new Error('S3 Storage Strategy not implemented yet')
+			// The bucket name is the s3:// URI's own "host" segment (s3://<bucket>); endpoint,
+			// region and credentials aren't part of that convention, so they come from their
+			// own env vars instead - same <APP>_ prefix as every other setting here.
+			const bucket = destinationPath.replace('s3://', '')
+
+			this.storageStrategy = new S3StorageStrategy({
+				bucket,
+				endpoint: envVariables[`${envPrefix}_S3_ENDPOINT`],
+				region: envVariables[`${envPrefix}_S3_REGION`],
+				accessKeyId: envVariables[`${envPrefix}_S3_ACCESS_KEY_ID`],
+				secretAccessKey: envVariables[`${envPrefix}_S3_SECRET_ACCESS_KEY`]
+			})
+
+			// The upload arrives fully in memory (file.buffer) - the S3 strategy uploads it
+			// straight from there, so the ephemeral local disk (wiped on every redeploy) is
+			// never touched at all, not even as a staging step.
+			storage = multer.memoryStorage()
 		} else {
 			// Kept so the directory can be created lazily (see _ensureDestination), only when an upload
 			// middleware is actually mounted — a service that never uploads should not create an empty
